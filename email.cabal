@@ -1,0 +1,18 @@
+name:                email
+version:             0.1.0.0
+synopsis:            Parsing and rendering of email and MIME messages
+-- description:         
+license:             BSD3
+license-file:        LICENSE
+author:              Kyle Raftogianis <kylerafto@gmail.com>
+maintainer:          Kyle Raftogianis <kylerafto@gmail.com>
+copyright:           (c) 2013 Kyle Raftogianis
+category:            Network
+build-type:          Simple
+cabal-version:       >= 1.8
+
+library
+  build-depends:
+    base >= 4 && < 5
+
+  ghc-options:       -Wall
