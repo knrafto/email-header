@@ -3,7 +3,7 @@ module Network.Email.Types
     ( Address(..)
     , Mailbox(..)
     , Recipient(..)
-    , MessageId(..)
+    , MessageID(..)
     ) where
 
 import qualified Data.ByteString as B
@@ -28,5 +28,5 @@ data Recipient
     deriving (Show)
 
 -- | A message identifier.
-newtype MessageId = MessageId B.ByteString
+newtype MessageID = MessageID B.ByteString
     deriving (Eq, Ord, Show)

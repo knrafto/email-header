@@ -1,7 +1,7 @@
 -- | Parsing message identifiers.
-module Network.Email.Parse.MessageId
-    ( messageId
-    , messageIdList
+module Network.Email.Parse.MessageID
+    ( messageID
+    , messageIDList
     ) where
 
 import Data.Attoparsec              (Parser)
@@ -12,9 +12,9 @@ import Network.Email.Parse.Internal
 import Network.Email.Types
 
 -- | Parse a message identifier.
-messageId :: Parser MessageId
-messageId = MessageId <$> angleAddrSpec
+messageID :: Parser MessageID
+messageID = MessageID <$> angleAddrSpec
 
 -- | Parse a list of message identifiers.
-messageIdList :: Parser [MessageId]
-messageIdList = many1 messageId
+messageIDList :: Parser [MessageID]
+messageIDList = many1 messageID
