@@ -5,6 +5,7 @@ module Network.Email.Parse
     , phraseList
     , unstructured
     , dateTime
+    , addrSpec
     ) where
 
 import           Control.Applicative
@@ -72,7 +73,10 @@ dateTime = do
 
     return zoned
   where
-    dayOfWeek = lexeme dayName <* symbol ","
+    comma     = 44
+    colon     = 58
+
+    dayOfWeek = lexeme dayName <* character comma
     localTime = LocalTime <$> date <*> timeOfDay
     zonedTime = ZonedTime <$> localTime <*> timeZone
 
@@ -91,8 +95,8 @@ dateTime = do
 
     timeOfDay = do
         h <- lexeme (digits 2)
-        m <- symbol ":" *> lexeme (digits 2)
-        s <- option (0 :: Int) (symbol ":" *> lexeme (digits 2))
+        m <- character colon *> lexeme (digits 2)
+        s <- option (0 :: Int) (character colon *> lexeme (digits 2))
         failNothing "invalid time of day" $
             makeTimeOfDayValid h m (fromIntegral s)
 

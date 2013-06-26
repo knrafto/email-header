@@ -9,6 +9,7 @@ module Network.Email.Parse.Internal
     , skipCfws
     , lexeme
     , symbol
+    , character
       -- * Digits
     , digits
       -- * Atoms
@@ -18,6 +19,8 @@ module Network.Email.Parse.Internal
     , textToken
     , quotedString
     , encodedWord
+      -- * Address specification
+    , addrSpec
       -- * Combinators
     , commaSep
     ) where
@@ -34,6 +37,7 @@ import           Data.ByteString.Builder
 import qualified Data.ByteString.Char8      as B8
 import qualified Data.ByteString.Lazy       as L
 import qualified Data.ByteString.Unsafe     as B
+import           Data.List
 import           Data.Monoid
 import qualified Data.Text                  as T
 import           Data.Word
@@ -48,7 +52,11 @@ failNothing s = maybe (fail s) return
 failLeft :: Monad m => Either String a -> m a
 failLeft = either fail return
 
--- | Skip folding white space.
+-- | Run a 'Builder' as a strict 'B.ByteString'.
+toByteString :: Builder -> B.ByteString
+toByteString = L.toStrict . toLazyByteString
+
+-- | Skip folding whitespace.
 skipFws :: Parser ()
 skipFws = A8.skipSpace
 
@@ -68,7 +76,7 @@ comment =
         | c == backslash   = Just (n, True)
         | otherwise        = Just (n, False)
 
--- | Skip any comments or folding white space.
+-- | Skip any comments or folding whitespace.
 skipCfws :: Parser ()
 skipCfws = skipFws *> (comment *> skipCfws <|> return ())
 
@@ -79,6 +87,10 @@ lexeme = (<* skipCfws)
 -- | Skip comments or white space after a string.
 symbol :: B.ByteString -> Parser B.ByteString
 symbol = lexeme . A.string
+
+-- | Skip comments or wuite space after a character.
+character :: Word8 -> Parser Word8
+character = lexeme . A.word8
 
 -- Parse a set number of digits.
 digits :: Integral a => Int -> Parser a
@@ -130,8 +142,6 @@ unescape p decode str
     | B.any p str = Z.parse (toByteString <$> go mempty) str
     | otherwise   = return str
   where
-    toByteString = L.toStrict . toLazyByteString
-
     go acc       = do
         s    <- Z.takeWhile (not . p)
         done <- Z.atEnd
@@ -141,30 +151,40 @@ unescape p decode str
                 b <- decode
                 go (acc <> byteString s <> b)
 
+-- | Scan for the end of a string.
+scanString :: Word8 -> Parser B.ByteString
+scanString end = A.scan False f
+  where
+    backslash = 92
+
+    f True _             = Just False
+    f _    c
+        | c == end       = Nothing
+        | c == backslash = Just True
+        | otherwise      = Just False
+
+-- | Parse a raw (undecoded) quoted-string.
+rawQuotedString :: Parser B.ByteString
+rawQuotedString = lexeme (A.word8 doubleQuote *> qtext <* A.word8 doubleQuote)
+  where
+    doubleQuote = 34
+    qtext       = scanString doubleQuote
+
 -- | Parse a quoted-string.
 quotedString :: Parser B.ByteString
-quotedString = lexeme (A.word8 doubleQuote *> qtext <* A.word8 doubleQuote)
+quotedString = do
+    s <- rawQuotedString
+    failLeft $ unescape isEscape decode s
   where
-    doubleQuote    = 34
     carriageReturn = 13
     backslash      = 92
     isEscape w     = w == backslash || w == carriageReturn
 
-    qtext          = do
-        s <- A.scan False f
-        failLeft $ unescape isEscape decode s
-      where
-        f True _               = Just False
-        f _    c
-            | c == doubleQuote = Nothing
-            | c == backslash   = Just True
-            | otherwise        = Just False
-
-        decode                 = do
-            s <- Z.take 2
-            return $ if s == "\r\n"
-                     then mempty
-                     else word8 (B.unsafeIndex s 1)
+    decode         = do
+        s <- Z.take 2
+        return $ if s == "\r\n"
+                 then mempty
+                 else word8 (B.unsafeIndex s 1)
 
 -- | Parse an encoded word, as per RFC 2047.
 encodedWord :: Parser T.Text
@@ -209,6 +229,35 @@ hexPair = do
           | w >= 65 && w <= 90 = w - 55
           | otherwise          = 255
 
+-- | Parse an email address, stripping out whitespace and comments.
+addrSpec :: Parser B.ByteString
+addrSpec = toByteString . mconcat <$>
+    sequence [localPart, word8 atSign <$ character atSign, domain]
+  where
+    doubleQuote = 34
+    dot         = 46
+    atSign      = 64
+
+    wrap w b    = word8 w <> b <> word8 w
+    dotSep p    = mconcat . intersperse (word8 dot) <$>
+                  A.sepBy1 p (character dot)
+
+    addrAtom    = byteString <$> atom
+    addrQuote   = wrap doubleQuote . byteString <$> rawQuotedString
+
+    localPart   = dotSep (addrAtom <|> addrQuote)
+    domain      = dotSep addrAtom <|> domainLiteral
+
+-- | Parse a domain literal.
+domainLiteral :: Parser Builder
+domainLiteral = lexeme $ do
+    s <- A.word8 leftBracket *> dtext <* A.word8 rightBracket
+    return $ word8 leftBracket <> byteString s <> word8 rightBracket
+  where
+    leftBracket  = 91
+    rightBracket = 93
+    dtext        = scanString rightBracket
+
 -- | @optionalSepBy p sep@ applies /zero/ or more occurrences of @p@,
 -- separated by @sep@. Null entries between separators will be filtered
 -- out.
@@ -221,4 +270,6 @@ optionalSepBy p sep = step
 
 -- | Parse a list of elements, separated by commas.
 commaSep :: Parser a -> Parser [a]
-commaSep p = optionalSepBy p (symbol ",")
+commaSep p = optionalSepBy p (character comma)
+  where
+    comma = 44
