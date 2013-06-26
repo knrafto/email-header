@@ -10,10 +10,12 @@ module Network.Email.Parse
     ( module Network.Email.Parse.Address
     , module Network.Email.Parse.DateTime
     , module Network.Email.Parse.MessageID
+    , module Network.Email.Parse.Mime
     , module Network.Email.Parse.Text
     ) where
 
 import Network.Email.Parse.Address
 import Network.Email.Parse.DateTime
 import Network.Email.Parse.MessageID
+import Network.Email.Parse.Mime
 import Network.Email.Parse.Text

@@ -4,9 +4,12 @@ module Network.Email.Types
     , Mailbox(..)
     , Recipient(..)
     , MessageID(..)
+    , MimeType(..)
+    , Parameters
     ) where
 
 import qualified Data.ByteString as B
+import           Data.Map        (Map)
 import qualified Data.Text.Lazy  as L
 
 -- | An email address.
@@ -30,3 +33,12 @@ data Recipient
 -- | A message identifier.
 newtype MessageID = MessageID B.ByteString
     deriving (Eq, Ord, Show)
+
+-- | A MIME type.
+data MimeType = MimeType
+    { mimeType    :: B.ByteString
+    , mimeSubtype :: B.ByteString
+    } deriving (Eq, Ord, Show)
+
+-- | Content type parameters.
+type Parameters = Map B.ByteString B.ByteString

@@ -4,12 +4,14 @@ module Network.Email.Parse.Internal
     ( -- * Monad failure
       failNothing
     , failLeft
-      -- * White space
+      -- * Whitespace
     , skipFws
     , skipCfws
     , lexeme
     , symbol
     , character
+      -- * Numbers
+    , digits
       -- * Atoms
     , atom
     , dotAtom
@@ -90,6 +92,23 @@ symbol = lexeme . A.string
 -- | Skip comments or wuite space after a character.
 character :: Word8 -> Parser Word8
 character = lexeme . A.word8
+
+-- | Quickly (and unsafely) convert a digit to the number it represents.
+fromDigit :: Integral a => Word8 -> a
+fromDigit w = fromIntegral (w - 48)
+
+-- Parse a set number of digits.
+digits :: Integral a => Int -> Parser a
+digits 0 = return 0
+digits 1 = fromDigit <$> A.satisfy A8.isDigit_w8
+digits n = do
+    s <- A.take n
+    if B.all A8.isDigit_w8 s
+        then return ()
+        else fail $ "expected " ++ show n ++ " digits"
+    return $ B.foldl' step 0 s
+  where
+    step a w = a * 10 + fromDigit w
 
 -- | Parse an token lexeme consisting of all printable characters, but
 --  disallowing the specified special characters.

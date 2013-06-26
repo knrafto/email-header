@@ -9,26 +9,10 @@ import           Data.Attoparsec              (Parser)
 import qualified Data.Attoparsec              as A
 import qualified Data.Attoparsec.Char8        as A8
 import           Data.Attoparsec.Combinator
-import qualified Data.ByteString              as B
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
 
 import           Network.Email.Parse.Internal
-
--- Parse a set number of digits.
-digits :: Integral a => Int -> Parser a
-digits n
-    | n == 0 = return 0
-    | n == 1 = fromDigit <$> A.satisfy A8.isDigit_w8
-    | otherwise = do
-        s <- A.take n
-        if B.all A8.isDigit_w8 s
-            then return ()
-            else fail $ "expected " ++ show n ++ " digits"
-        return $ B.foldl' step 0 s
-  where
-    fromDigit w = fromIntegral (w - 48)
-    step a w    = a * 10 + fromDigit w
 
 -- | Parse a date and time. Currently, non-numeric timezones (such as \"PDT\")
 -- are considered equivalent to UTC time.
