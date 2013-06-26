@@ -24,7 +24,10 @@ library
   exposed-modules:
     Network.Email.Charset
     Network.Email.Parse
+    Network.Email.Parse.DateTime
     Network.Email.Parse.Internal
+    Network.Email.Parse.MessageId
+    Network.Email.Parse.Text
     Network.Email.Types
 
   ghc-options:       -Wall
