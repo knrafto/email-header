@@ -25,5 +25,6 @@ library
     Network.Email.Charset
     Network.Email.Parse
     Network.Email.Parse.Internal
+    Network.Email.Types
 
   ghc-options:       -Wall
