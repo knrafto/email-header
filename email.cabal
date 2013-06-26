@@ -1,7 +1,6 @@
 name:                email
 version:             0.1.0.0
 synopsis:            Parsing and rendering of email and MIME messages
--- description:         
 license:             BSD3
 license-file:        LICENSE
 author:              Kyle Raftogianis <kylerafto@gmail.com>
@@ -13,6 +12,18 @@ cabal-version:       >= 1.8
 
 library
   build-depends:
-    base >= 4 && < 5
+    base              >= 4      && < 5,
+    time,
+    bytestring        >= 0.10.2,
+    text,
+    text-icu,
+    case-insensitive,
+    attoparsec,
+    base64-bytestring
+
+  exposed-modules:
+    Network.Email.Charset
+    Network.Email.Parse
+    Network.Email.Parse.Internal
 
   ghc-options:       -Wall
