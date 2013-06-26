@@ -3,13 +3,14 @@ module Network.Email.Types
     ( Address(..)
     , Mailbox(..)
     , Recipient(..)
+    , MessageId(..)
     ) where
 
 import qualified Data.ByteString as B
 import qualified Data.Text.Lazy  as L
 
 -- | An email address.
-newtype Address = Address { showAddress :: B.ByteString }
+newtype Address = Address B.ByteString
     deriving (Eq, Ord, Show)
 
 -- | A 'Mailbox' receives mail.
@@ -25,3 +26,7 @@ data Recipient
     = Individual Mailbox
     | Group L.Text [Mailbox]
     deriving (Show)
+
+-- | A message identifier.
+newtype MessageId = MessageId B.ByteString
+    deriving (Eq, Ord, Show)

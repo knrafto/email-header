@@ -64,12 +64,16 @@ unstructured = fromElements <$> many element
 address :: Parser Address
 address = Address <$> addrSpec
 
--- | Parse an email address in angle brackets.
-angleAddr :: Parser Address
-angleAddr = character leftAngle *> address <* character rightAngle
+-- | Parse an address specification in angle brackets.
+angleAddrSpec :: Parser B.ByteString
+angleAddrSpec = character leftAngle *> addrSpec <* character rightAngle
   where
     leftAngle  = 60
     rightAngle = 62
+
+-- | Parse an email address in angle brackets.
+angleAddr :: Parser Address
+angleAddr = Address <$> angleAddrSpec
 
 -- | Parse a 'Mailbox'.
 mailbox :: Parser Mailbox
@@ -94,5 +98,5 @@ recipientList :: Parser [Recipient]
 recipientList = commaSep recipient
 
 -- | Parse a message identifier,
-messageId :: Parser B.ByteString
-messageId = showAddress <$> angleAddr
+messageId :: Parser MessageId
+messageId = MessageId <$> angleAddrSpec
