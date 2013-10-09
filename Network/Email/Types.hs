@@ -1,6 +1,10 @@
 -- | Email types, renamed slightly from RFC 8322.
 module Network.Email.Types
-    ( Address(..)
+    ( Headers
+    , HeaderName
+    , HeaderField
+    , EmailError(..)
+    , Address(..)
     , Mailbox(..)
     , Recipient(..)
     , MessageID(..)
@@ -8,9 +12,31 @@ module Network.Email.Types
     , Parameters
     ) where
 
-import qualified Data.ByteString as B
-import           Data.Map        (Map)
-import qualified Data.Text.Lazy  as L
+import           Control.Monad.Error
+import qualified Data.ByteString      as B
+import qualified Data.ByteString.Lazy as L
+import           Data.CaseInsensitive (CI)
+import           Data.Map             (Map)
+import qualified Data.Text.Lazy       as L
+
+-- | A set of email headers.
+type Headers = [(HeaderName, HeaderField)]
+
+-- | An email header name.
+type HeaderName = CI B.ByteString
+
+-- | The email header field.
+type HeaderField = L.ByteString
+
+-- | An email parsing error type.
+data EmailError
+    = HeaderParseError String
+    | HeaderNotFound
+    | OtherError String
+    deriving (Eq, Show)
+
+instance Error EmailError where
+    strMsg = OtherError
 
 -- | An email address.
 newtype Address = Address B.ByteString

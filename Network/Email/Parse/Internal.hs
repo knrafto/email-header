@@ -103,9 +103,8 @@ digits 0 = return 0
 digits 1 = fromDigit <$> A.satisfy A8.isDigit_w8
 digits n = do
     s <- A.take n
-    if B.all A8.isDigit_w8 s
-        then return ()
-        else fail $ "expected " ++ show n ++ " digits"
+    unless (B.all A8.isDigit_w8 s) $
+        fail $ "expected " ++ show n ++ " digits"
     return $ B.foldl' step 0 s
   where
     step a w = a * 10 + fromDigit w

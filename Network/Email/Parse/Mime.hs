@@ -2,7 +2,6 @@
 module Network.Email.Parse.Mime
     ( mimeVersion
     , contentType
-    , contentEncoding
     ) where
 
 import           Control.Applicative
@@ -35,7 +34,3 @@ contentType = pair
     equals    = 61
 
     parameter = pair token (character equals *> (token <|> quotedString))
-
--- | Parse the content encoding.
-contentEncoding :: Parser B.ByteString
-contentEncoding = token
