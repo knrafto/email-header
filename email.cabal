@@ -47,7 +47,14 @@ test-suite tests
 
   build-depends:
     base,
+    bytestring,
     email,
     HUnit,
+    mtl,
+    old-locale,
+    QuickCheck,
+    quickcheck-instances,
     tasty,
-    tasty-hunit
+    tasty-hunit,
+    tasty-quickcheck,
+    time
