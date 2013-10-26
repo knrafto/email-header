@@ -27,29 +27,30 @@ module Network.Email.Parse.Internal
     ) where
 
 import           Control.Applicative
-import           Data.Attoparsec         (Parser)
-import qualified Data.Attoparsec         as A
-import qualified Data.Attoparsec.Char8   as A8
-import qualified Data.Attoparsec.Zepto   as Z
+import           Control.Monad
+import           Data.Attoparsec              (Parser)
+import qualified Data.Attoparsec              as A
+import qualified Data.Attoparsec.Char8        as A8
+import qualified Data.Attoparsec.Zepto        as Z
 import           Data.Bits
-import qualified Data.ByteString         as B
-import qualified Data.ByteString.Base64  as Base64
-import           Data.ByteString.Builder
-import qualified Data.ByteString.Char8   as B8
-import qualified Data.ByteString.Lazy    as L
-import qualified Data.ByteString.Unsafe  as B
+import qualified Data.ByteString              as B
+import qualified Data.ByteString.Base64       as Base64
+import           Data.ByteString.Lazy.Builder
+import qualified Data.ByteString.Char8        as B8
+import qualified Data.ByteString.Lazy         as L
+import qualified Data.ByteString.Unsafe       as B
 import           Data.List
 import           Data.Monoid
-import qualified Data.Text               as T
+import qualified Data.Text                    as T
 import           Data.Word
 
-import qualified Network.Email.Charset   as CS
+import qualified Network.Email.Charset        as CS
 
--- | Return a 'Just' value, and fail a 'Nothing' value.
+-- | Return a 'Just' value, and 'fail' a 'Nothing' value.
 failNothing :: Monad m => String -> Maybe a -> m a
 failNothing s = maybe (fail s) return
 
--- | Return a 'Right' value, and fail a 'Left' value.
+-- | Return a 'Right' value, and 'fail' a 'Left' value.
 failLeft :: Monad m => Either String a -> m a
 failLeft = either fail return
 
@@ -97,7 +98,7 @@ character = lexeme . A.word8
 fromDigit :: Integral a => Word8 -> a
 fromDigit w = fromIntegral (w - 48)
 
--- Parse a set number of digits.
+-- | Parse a fixed number of digits.
 digits :: Integral a => Int -> Parser a
 digits 0 = return 0
 digits 1 = fromDigit <$> A.satisfy A8.isDigit_w8

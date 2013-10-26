@@ -6,7 +6,6 @@ module Network.Email.Parse.Mime
 
 import           Control.Applicative
 import           Data.Attoparsec              (Parser)
-import qualified Data.ByteString              as B
 import qualified Data.Map                     as Map
 
 import           Network.Email.Parse.Internal
