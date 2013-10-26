@@ -1,14 +1,14 @@
 -- | Parsing of MIME header fields.
-module Network.Email.Parse.Mime
+module Network.Email.Parse.Header.Mime
     ( mimeVersion
     , contentType
     ) where
 
 import           Control.Applicative
-import           Data.Attoparsec              (Parser)
-import qualified Data.Map                     as Map
+import           Data.Attoparsec     (Parser)
+import qualified Data.Map            as Map
 
-import           Network.Email.Parse.Internal
+import           Network.Email.Parse.Header.Internal
 import           Network.Email.Types
 
 -- | Parse a pair.

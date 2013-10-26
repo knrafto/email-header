@@ -1,14 +1,14 @@
 -- | Parsing message identifiers.
-module Network.Email.Parse.MessageID
+module Network.Email.Parse.Header.MessageID
     ( messageID
     , messageIDList
     ) where
 
-import Data.Attoparsec              (Parser)
+import Data.Attoparsec            (Parser)
 import Data.Attoparsec.Combinator
 import Data.Functor
 
-import Network.Email.Parse.Internal
+import Network.Email.Parse.Header.Internal
 import Network.Email.Types
 
 -- | Parse a message identifier.

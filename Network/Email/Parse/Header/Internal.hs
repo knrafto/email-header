@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 -- | Parsing of basic header syntax, and helper functions.
-module Network.Email.Parse.Internal
+module Network.Email.Parse.Header.Internal
     ( -- * Monad failure
       failNothing
     , failLeft
@@ -44,7 +44,7 @@ import           Data.Monoid
 import qualified Data.Text                    as T
 import           Data.Word
 
-import qualified Network.Email.Charset        as CS
+import qualified Network.Email.Charset as CS
 
 -- | Return a 'Just' value, and 'fail' a 'Nothing' value.
 failNothing :: Monad m => String -> Maybe a -> m a

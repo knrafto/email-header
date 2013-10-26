@@ -1,30 +1,25 @@
 {-# LANGUAGE FlexibleContexts, OverloadedStrings #-}
--- | Parsing of common header values.
-module Network.Email.Parse
-    ( -- * Header parsing
-      lookupField
-    , parseWith
-    , parseField
-      -- * Header fields
-      -- ** Origination date field
-    , dateField
-      -- ** Originator fields
+-- | Parsing of common header fields.
+module Network.Email.Parse.Header
+    ( -- * Origination date field
+      dateField
+      -- * Originator fields
     , fromField
     , senderField
     , replyToField
-      -- ** Destination address fields
+      -- * Destination address fields
     , toField
     , ccField
     , bccField
-      -- ** Identification fields
+      -- * Identification fields
     , messageIDField
     , inReplyToField
     , referencesField
-      -- ** Informational fields
+      -- * Informational fields
     , subjectField
     , commentsField
     , keywordsField
-      -- ** Resent fields
+      -- * Resent fields
     , resentDateField
     , resentFromField
     , resentSenderField
@@ -32,7 +27,7 @@ module Network.Email.Parse
     , resentCcField
     , resentBccField
     , resentMessageIDField
-      -- ** MIME fields
+      -- * MIME fields
     , mimeVersionField
     , contentTypeField
     , contentTransferEncodingField
@@ -43,33 +38,17 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Data.Attoparsec.Combinator
 import           Data.Attoparsec.Lazy
-import qualified Data.ByteString               as B
-import qualified Data.Text.Lazy                as L
+import qualified Data.ByteString            as B
+import qualified Data.Text.Lazy             as L
 import           Data.Time.LocalTime
 
-import           Network.Email.Parse.Address
-import           Network.Email.Parse.DateTime
-import           Network.Email.Parse.Internal
-import           Network.Email.Parse.MessageID
-import           Network.Email.Parse.Mime
-import           Network.Email.Parse.Text
+import           Network.Email.Parse.Header.Address
+import           Network.Email.Parse.Header.DateTime
+import           Network.Email.Parse.Header.Internal
+import           Network.Email.Parse.Header.MessageID
+import           Network.Email.Parse.Header.Mime
+import           Network.Email.Parse.Header.Text
 import           Network.Email.Types
-
--- | Lookup a header and return its topmost value.
-lookupField
-    :: MonadError EmailError m
-    => HeaderName
-    -> Headers
-    -> m HeaderField
-lookupField k hs = case lookup k hs of
-    Nothing -> throwError HeaderNotFound
-    Just v  -> return v
-
--- | Parse a header field with a parser.
-parseWith :: MonadError EmailError m => Parser a -> HeaderField -> m a
-parseWith p s = case parse (skipCfws *> p) s of
-    Fail _ _ msg -> throwError (HeaderParseError msg)
-    Done _ r     -> return r
 
 -- | Lookup and parse a header with a parser.
 parseField
@@ -78,7 +57,11 @@ parseField
     -> Parser a
     -> Headers
     -> m a
-parseField k p hs = lookupField k hs >>= parseWith p
+parseField k p hs = do
+    field <- maybe (throwError HeaderNotFound) return $ lookup k hs
+    case parse (skipCfws *> p) field of
+        Fail _ _ msg -> throwError (HeaderParseError msg)
+        Done _ r     -> return r
 
 -- | Get the value of the @Date:@ field.
 dateField :: MonadError EmailError m => Headers -> m ZonedTime

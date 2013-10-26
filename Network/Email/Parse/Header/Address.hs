@@ -1,5 +1,5 @@
 -- | Parsing of email addresses and mailboxes.
-module Network.Email.Parse.Address
+module Network.Email.Parse.Header.Address
     ( address
     , mailbox
     , mailboxList
@@ -8,10 +8,10 @@ module Network.Email.Parse.Address
     ) where
 
 import Control.Applicative
-import Data.Attoparsec              (Parser)
+import Data.Attoparsec     (Parser)
 
-import Network.Email.Parse.Internal
-import Network.Email.Parse.Text
+import Network.Email.Parse.Header.Internal
+import Network.Email.Parse.Header.Text
 import Network.Email.Types
 
 -- | Parse an email address in angle brackets.

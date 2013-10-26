@@ -1,6 +1,7 @@
 name:                email
 version:             0.1.0.0
-synopsis:            Parsing and rendering of email and MIME messages
+synopsis:            Parsing of email and MIME messages
+description:         Parsing of email and MIME messages
 license:             BSD3
 license-file:        LICENSE
 author:              Kyle Raftogianis <kylerafto@gmail.com>
@@ -25,11 +26,28 @@ library
 
   exposed-modules:
     Network.Email.Charset
-    Network.Email.Parse
-    Network.Email.Parse.DateTime
-    Network.Email.Parse.Internal
-    Network.Email.Parse.MessageID
-    Network.Email.Parse.Text
+    Network.Email.Parse.Header
     Network.Email.Types
 
-  ghc-options:       -Wall
+  other-modules:
+    Network.Email.Parse.Header.Address
+    Network.Email.Parse.Header.DateTime
+    Network.Email.Parse.Header.Internal
+    Network.Email.Parse.Header.MessageID
+    Network.Email.Parse.Header.Mime
+    Network.Email.Parse.Header.Text
+
+  ghc-options: -Wall
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs: tests
+  ghc-options: -Wall -threaded
+
+  build-depends:
+    base,
+    email,
+    HUnit,
+    tasty,
+    tasty-hunit

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Parsing of date and time values.
-module Network.Email.Parse.DateTime
+module Network.Email.Parse.Header.DateTime
     ( dateTime
     ) where
 
@@ -12,7 +12,7 @@ import           Data.Attoparsec.Combinator
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
 
-import           Network.Email.Parse.Internal
+import           Network.Email.Parse.Header.Internal
 
 -- | Parse a date and time. Currently, non-numeric timezones (such as \"PDT\")
 -- are considered equivalent to UTC time.
