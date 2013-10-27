@@ -4,17 +4,39 @@ module Main
     ( main
     ) where
 
-import           Control.Applicative
-import qualified Data.ByteString.Lazy.Char8 as L
-import           Data.Time.Calendar
-import           Data.Time.Format
-import           Data.Time.LocalTime
-import           System.Locale
-import           Test.Tasty
-import           Test.Tasty.QuickCheck
+import Control.Applicative
+import Data.Attoparsec
+import Data.Monoid
+import Data.String
+import Data.Time.Calendar
+import Data.Time.Format
+import Data.Time.LocalTime
+import System.Locale
+import Test.QuickCheck
+import Test.Tasty
+import Test.Tasty.QuickCheck
 
-import           Network.Email.Parse.Header
-import           Network.Email.Types
+import Network.Email.Parse.Header.DateTime
+import Network.Email.Parse.Header.Internal
+
+import           Render (Render(..), Doc)
+import qualified Render as R
+
+fws :: Doc
+fws = R.oneof [" ", "  "]
+
+cfws :: Doc
+cfws = R.frequency [(9, fws), (1, "(comment)")]
+
+ocfws :: Doc
+ocfws = R.option cfws
+
+checkParser :: (Arbitrary a, Render a, Eq a, Show a) => Parser a -> Property
+checkParser p = property $ \a ->
+    forAll (R.renderDoc $ render a) $ \s ->
+    case parseOnly (skipCfws *> p) s of
+        Left  _ -> False
+        Right r -> r == a
 
 instance Eq ZonedTime where
     ZonedTime t1 z1 == ZonedTime t2 z2 = (t1, z1) == (t2, z2)
@@ -26,41 +48,43 @@ instance Arbitrary ZonedTime where
             h <- choose (0, 23)
             m <- choose (0, 59)
             s <- fromInteger <$> choose (0, 60)
-            d <- (2000 +) <$> arbitrary
+            d <- choose (0, 50000)
             return $ LocalTime (ModifiedJulianDay d) (TimeOfDay h m s)
 
         zone = minutesToTimeZone <$> choose (-12*60, 14*60)
 
+instance Render ZonedTime where
+    render t = R.option (ocfws <> format "%a" <> ocfws <> ",")
+            <> ocfws <> R.oneof [format "%d", format "%e"]
+            <> cfws <> format "%b"
+            <> cfws <> year
+            <> cfws <> format "%H"
+            <> ocfws <> ":" <> ocfws <> format "%M"
+            <> ocfws <> seconds
+            -- TODO: obs-zone
+            <> cfws <> format "%z"
+            <> ocfws
+      where
+        format str = fromString $ formatTime defaultTimeLocale str t
+
+        -- TODO: 3-digit years
+        year = R.oneof $
+            [ format "%0Y" ] ++
+            [ format "%y" | 1950 <= y && y < 2000 ] ++
+            [ format "%y" | 2000 <= y && y < 2050 ]
+          where
+            (y,_,_) = toGregorian . localDay $ zonedTimeToLocalTime t
+
+        seconds
+            | s == (0 :: Int) = mempty
+            | otherwise       = ":" <> ocfws <> format "%S"
+          where
+            s = floor . todSec . localTimeOfDay $ zonedTimeToLocalTime t
+
 tests :: TestTree
-tests = testGroup "headers" [dateTests]
-
-dateTests :: TestTree
-dateTests = testGroup "date"
-    [ testProperty "standard" $
-        \date -> testDate date "%a, %e %b %0Y %T %z" ==
-                 Right date
-    , testProperty "short" $
-        \date -> testDate date "%e %b %0Y %R %z" ==
-                 testDate date "%a, %e %b %0Y %R:00 %z"
-    , testProperty "space" $
-        \date -> testDate date " %a(comment), %e %b %0Y %H : %M : %S %z " ==
-                 Right date
-    , testProperty "2-digit year" $
-        \date -> (year date `div` 100 < 50 ==>
-                  testDate date "%e %b   %y %T %z" ==
-                  testDate date "%e %b 19%y %T %z")
-            .||. (testDate date "%e %b   %y %T %z" ==
-                  testDate date "%e %b 20%y %T %z")
+tests = testGroup "parsers"
+    [ testProperty "date-time" $ checkParser dateTime
     ]
-  where
-    testDate :: ZonedTime -> String -> Either EmailError ZonedTime
-    testDate date str =
-        let s = formatTime defaultTimeLocale str date
-        in  dateField [("Date", L.pack s)]
-
-    year date =
-        let (y,_,_) = toGregorian . localDay $ zonedTimeToLocalTime date
-        in y
 
 main :: IO ()
 main = defaultMain tests

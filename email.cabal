@@ -44,6 +44,7 @@ test-suite tests
   ghc-options: -Wall -threaded
 
   build-depends:
+    attoparsec,
     base,
     bytestring,
     email,
@@ -56,3 +57,6 @@ test-suite tests
     tasty-hunit,
     tasty-quickcheck,
     time
+
+  other-modules:
+    Render
