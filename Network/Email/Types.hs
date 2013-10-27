@@ -12,7 +12,6 @@ module Network.Email.Types
     , Parameters
     ) where
 
-import           Control.Monad.Error
 import qualified Data.ByteString      as B
 import qualified Data.ByteString.Lazy as L
 import           Data.CaseInsensitive (CI)
@@ -32,11 +31,7 @@ type HeaderField = L.ByteString
 data EmailError
     = HeaderParseError String
     | HeaderNotFound
-    | OtherError String
     deriving (Eq, Show)
-
-instance Error EmailError where
-    strMsg = OtherError
 
 -- | An email address.
 newtype Address = Address B.ByteString

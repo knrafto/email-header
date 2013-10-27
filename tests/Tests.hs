@@ -58,7 +58,6 @@ dateTests = testGroup "date"
         let s = formatTime defaultTimeLocale str date
         in  dateField [("Date", L.pack s)]
 
-    year :: ZonedTime -> Int
     year date =
         let (y,_,_) = toGregorian . localDay $ zonedTimeToLocalTime date
         in y
