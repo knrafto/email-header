@@ -6,6 +6,8 @@ module Main
 
 import Control.Applicative
 import Data.Attoparsec
+import Data.ByteString.Lazy.Builder
+import qualified Data.ByteString.Lazy as L
 import Data.Monoid
 import Data.String
 import Data.Time.Calendar
@@ -16,8 +18,9 @@ import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
-import Network.Email.Parse.Header.DateTime
+import qualified Network.Email.Parse.Header.DateTime as P
 import Network.Email.Parse.Header.Internal
+import qualified Network.Email.Render.Header.DateTime as R
 
 import           Render (Render(..), Doc)
 import qualified Render as R
@@ -35,6 +38,16 @@ checkParser :: (Arbitrary a, Render a, Eq a, Show a) => Parser a -> Property
 checkParser p = property $ \a ->
     forAll (R.renderDoc $ render a) $ \s ->
     case parseOnly (skipCfws *> p) s of
+        Left  _ -> False
+        Right r -> r == a
+
+checkRenderer
+    :: (Arbitrary a, Eq a, Show a)
+    => Parser a
+    -> (a -> Builder)
+    -> Property
+checkRenderer p r = property $ \a ->
+    case parseOnly (skipCfws *> p) (L.toStrict . toLazyByteString $ r a) of
         Left  _ -> False
         Right r -> r == a
 
@@ -82,8 +95,16 @@ instance Render ZonedTime where
             s = floor . todSec . localTimeOfDay $ zonedTimeToLocalTime t
 
 tests :: TestTree
-tests = testGroup "parsers"
-    [ testProperty "date-time" $ checkParser dateTime
+tests = testGroup "tests" [parsers, renderers]
+
+parsers :: TestTree
+parsers = testGroup "parsers"
+    [ testProperty "date-time" $ checkParser P.dateTime
+    ]
+
+renderers :: TestTree
+renderers = testGroup "renderers"
+    [ testProperty "date-time" $ checkRenderer P.dateTime R.dateTime
     ]
 
 main :: IO ()

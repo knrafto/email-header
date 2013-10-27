@@ -18,6 +18,7 @@ library
     mtl,
     time,
     bytestring,
+    old-locale,
     text,
     text-icu,
     case-insensitive,
@@ -33,6 +34,7 @@ library
     Network.Email.Parse.Header.MessageID
     Network.Email.Parse.Header.Mime
     Network.Email.Parse.Header.Text
+    Network.Email.Render.Header.DateTime
     Network.Email.Types
 
   ghc-options: -Wall
