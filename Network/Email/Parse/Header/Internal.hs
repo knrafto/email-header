@@ -5,7 +5,6 @@ module Network.Email.Parse.Header.Internal
       failNothing
     , failLeft
       -- * Whitespace
-    , skipFws
     , skipCfws
     , lexeme
     , symbol

@@ -8,8 +8,8 @@ import           Control.Applicative
 import           Data.Attoparsec     (Parser)
 import qualified Data.Map            as Map
 
-import           Network.Email.Parse.Header.Internal
-import           Network.Email.Types
+import Network.Email.Parse.Header.Internal
+import Network.Email.Types
 
 -- | Parse a pair.
 pair :: Applicative f => f a -> f b -> f (a, b)

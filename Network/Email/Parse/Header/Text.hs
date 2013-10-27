@@ -16,7 +16,7 @@ import           Data.Text.Encoding
 import qualified Data.Text.Lazy             as L
 import           Data.Text.Lazy.Builder
 
-import           Network.Email.Parse.Header.Internal
+import Network.Email.Parse.Header.Internal
 
 -- | Combine a list of text elements (atoms, quoted strings, encoded words,
 -- etc.) into a larger phrase.

@@ -12,7 +12,7 @@ import           Data.Attoparsec.Combinator
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
 
-import           Network.Email.Parse.Header.Internal
+import Network.Email.Parse.Header.Internal
 
 -- | Parse a date and time. Currently, non-numeric timezones (such as \"PDT\")
 -- are considered equivalent to UTC time.
