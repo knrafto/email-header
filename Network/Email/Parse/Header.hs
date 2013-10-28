@@ -57,7 +57,7 @@ maybeToEither b = maybe (Left b) Right
 parseField :: HeaderName -> Parser a -> Headers -> Either EmailError a
 parseField k p hs = do
     field <- maybeToEither HeaderNotFound $ lookup k hs
-    case parse (skipCfws *> p) field of
+    case parse (padded p <* endOfInput) field of
         Fail _ _ msg -> Left (HeaderParseError msg)
         Done _ r     -> Right r
 

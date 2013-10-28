@@ -7,8 +7,9 @@ module Network.Email.Parse.Header.Address
     , recipientList
     ) where
 
-import Control.Applicative
-import Data.Attoparsec     (Parser)
+import           Control.Applicative
+import           Data.Attoparsec       (Parser)
+import qualified Data.Attoparsec.Char8 as A8
 
 import Network.Email.Parse.Header.Internal
 import Network.Email.Parse.Header.Text
@@ -33,12 +34,9 @@ mailboxList = commaSep mailbox
 
 -- | Parse a 'Recipient'.
 recipient :: Parser Recipient
-recipient = Group <$> phrase <* character colon
-                  <*> mailboxList <* character semicolon
+recipient = Group <$> phrase <* A8.char ':'
+                  <*> mailboxList <* A8.char ';'
         <|> Individual <$> mailbox
-  where
-    colon     = 58
-    semicolon = 59
 
 -- | Parse a list of @'Recipient's@.
 recipientList :: Parser [Recipient]

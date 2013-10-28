@@ -24,23 +24,20 @@ dateTime = do
     let (_, _, expected) =
             toWeekDate . localDay . zonedTimeToLocalTime $ zoned
     case wday of
-        Just actual | actual /= expected -> fail
-            "day of week does not match date"
-        _                                -> return ()
+        Just actual
+            | actual /= expected -> fail "day of week does not match date"
+        _                        -> return ()
 
     return zoned
   where
-    comma     = 44
-    colon     = 58
-
-    dayOfWeek = lexeme dayName <* character comma
-    localTime = LocalTime <$> date <*> timeOfDay
-    zonedTime = ZonedTime <$> localTime <*> timeZone
+    dayOfWeek = dayName <* padded (A8.char ',')
+    localTime = LocalTime <$> date <* cfws <*> timeOfDay
+    zonedTime = ZonedTime <$> localTime <* cfws <*> timeZone
 
     date      = do
-        d <- lexeme A8.decimal
-        m <- lexeme month
-        y <- lexeme year
+        d <- A8.decimal <* cfws
+        m <- month <* cfws
+        y <- year
         failNothing "invalid date" $ fromGregorianValid y m d
 
     year      =              digits 4
@@ -51,9 +48,9 @@ dateTime = do
                  | otherwise = 1900 + n
 
     timeOfDay = do
-        h <- lexeme (digits 2)
-        m <- character colon *> lexeme (digits 2)
-        s <- option (0 :: Int) (character colon *> lexeme (digits 2))
+        h <- digits 2
+        m <- padded (A8.char ':') *> digits 2
+        s <- option (0 :: Int) (padded (A8.char ':') *> digits 2)
         failNothing "invalid time of day" $
             makeTimeOfDayValid h m (fromIntegral s)
 
