@@ -61,4 +61,4 @@ test-suite tests
     time
 
   other-modules:
-    Render
+    DocGen
