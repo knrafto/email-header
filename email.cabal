@@ -29,6 +29,7 @@ library
     Network.Email.Charset
     Network.Email.Parse.Header
     Network.Email.Parse.Header.Address
+    Network.Email.Parse.Header.Builder
     Network.Email.Parse.Header.DateTime
     Network.Email.Parse.Header.Internal
     Network.Email.Parse.Header.MessageID
