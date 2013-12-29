@@ -34,9 +34,9 @@ fromElements =
 phrase :: Parser L.Text
 phrase = fromElements <$> many1 element
   where
-    element = T.concat     <$> many1 encodedWord
-          <|> decodeLatin1 <$> quotedString
-          <|> decodeLatin1 <$> dotAtom
+    element = T.concat     <$> many1 (lexeme encodedWord)
+          <|> decodeLatin1 <$> lexeme quotedString
+          <|> decodeLatin1 <$> lexeme dotAtom
 
 -- | Parse a comma-separated list of phrases.
 phraseList :: Parser [L.Text]
@@ -47,5 +47,5 @@ phraseList = commaSep phrase
 unstructured :: Parser L.Text
 unstructured = fromElements <$> many element
   where
-    element = T.concat     <$> many1 encodedWord
-          <|> decodeLatin1 <$> textToken
+    element = T.concat     <$> many1 (lexeme encodedWord)
+          <|> decodeLatin1 <$> lexeme textToken

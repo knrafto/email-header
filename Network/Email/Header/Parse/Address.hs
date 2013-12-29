@@ -34,8 +34,7 @@ mailboxList = commaSep mailbox
 
 -- | Parse a 'Recipient'.
 recipient :: Parser Recipient
-recipient = Group <$> phrase <* A8.char ':'
-                  <*> mailboxList <* A8.char ';'
+recipient = Group <$> phrase <* A8.char ':' <*> mailboxList <* A8.char ';'
         <|> Individual <$> mailbox
 
 -- | Parse a list of @'Recipient's@.

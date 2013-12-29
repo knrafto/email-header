@@ -7,6 +7,7 @@ module Network.Email.Header.Parse.Internal
       -- * Whitespace
     , fws
     , cfws
+    , lexeme
     , padded
       -- * Numbers
     , digits
@@ -75,6 +76,10 @@ comment = A8.char '(' *> A.scan (0 :: Int, False) f <* A8.char ')'
 -- | Skip any comments or folding whitespace.
 cfws :: Parser ()
 cfws = () <$ fws `sepBy` comment
+
+-- | Parse a value, followed by whitespace.
+lexeme :: Parser a -> Parser a
+lexeme p = p <* cfws
 
 -- | Parse a value, surrounded by whitespace.
 padded :: Parser a -> Parser a
