@@ -30,7 +30,6 @@ import           Data.Attoparsec              (Parser)
 import qualified Data.Attoparsec              as A
 import qualified Data.Attoparsec.Char8        as A8
 import           Data.Attoparsec.Combinator
-import qualified Data.Attoparsec.Zepto        as Z
 import           Data.Bits
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Base64       as Base64
@@ -38,8 +37,6 @@ import           Data.ByteString.Internal     (w2c)
 import           Data.ByteString.Lazy.Builder
 import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy         as L
-import qualified Data.ByteString.Unsafe       as B
-import           Data.List
 import           Data.Monoid
 import qualified Data.Text                    as T
 import           Data.Word
