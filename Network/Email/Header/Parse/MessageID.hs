@@ -1,5 +1,5 @@
 -- | Parsing message identifiers.
-module Network.Email.Parse.Header.MessageID
+module Network.Email.Header.Parse.MessageID
     ( messageID
     , messageIDList
     ) where
@@ -8,7 +8,7 @@ import Data.Attoparsec            (Parser)
 import Data.Attoparsec.Combinator
 import Data.Functor
 
-import Network.Email.Parse.Header.Internal
+import Network.Email.Header.Parse.Internal
 import Network.Email.Types
 
 -- | Parse a message identifier.

@@ -1,5 +1,5 @@
 -- | Parsing of MIME header fields.
-module Network.Email.Parse.Header.Mime
+module Network.Email.Header.Parse.Mime
     ( mimeVersion
     , contentType
     ) where
@@ -9,7 +9,7 @@ import           Data.Attoparsec       (Parser)
 import qualified Data.Attoparsec.Char8 as A8
 import qualified Data.Map              as Map
 
-import Network.Email.Parse.Header.Internal
+import Network.Email.Header.Parse.Internal
 import Network.Email.Types
 
 -- | Parse the MIME version (which should be 1.0).

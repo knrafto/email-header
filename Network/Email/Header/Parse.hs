@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, OverloadedStrings #-}
 -- | Parsing of common header fields.
-module Network.Email.Parse.Header
+module Network.Email.Header.Parse
     ( -- * Origination date field
       dateField
       -- * Originator fields
@@ -41,12 +41,12 @@ import qualified Data.ByteString            as B
 import qualified Data.Text.Lazy             as L
 import           Data.Time.LocalTime
 
-import Network.Email.Parse.Header.Address
-import Network.Email.Parse.Header.DateTime
-import Network.Email.Parse.Header.Internal
-import Network.Email.Parse.Header.MessageID
-import Network.Email.Parse.Header.Mime
-import Network.Email.Parse.Header.Text
+import Network.Email.Header.Parse.Address
+import Network.Email.Header.Parse.DateTime
+import Network.Email.Header.Parse.Internal
+import Network.Email.Header.Parse.MessageID
+import Network.Email.Header.Parse.Mime
+import Network.Email.Header.Parse.Text
 import Network.Email.Types
 
 -- | Convert a 'Maybe' to an 'Either'.

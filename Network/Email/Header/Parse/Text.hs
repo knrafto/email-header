@@ -1,5 +1,5 @@
 -- | Parsing structured and unstructured text.
-module Network.Email.Parse.Header.Text
+module Network.Email.Header.Parse.Text
     ( phrase
     , phraseList
     , unstructured
@@ -16,7 +16,7 @@ import           Data.Text.Encoding
 import qualified Data.Text.Lazy             as L
 import           Data.Text.Lazy.Builder
 
-import Network.Email.Parse.Header.Internal
+import Network.Email.Header.Parse.Internal
 
 -- | Combine a list of text elements (atoms, quoted strings, encoded words,
 -- etc.) into a larger phrase.

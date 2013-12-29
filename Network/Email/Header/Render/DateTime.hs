@@ -1,5 +1,5 @@
 -- | Rendering of date and time values.
-module Network.Email.Render.Header.DateTime
+module Network.Email.Header.Render.DateTime
     ( dateTime
     ) where
 

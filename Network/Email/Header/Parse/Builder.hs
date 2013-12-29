@@ -1,5 +1,5 @@
 -- | Parsing with builders.
-module Network.Email.Parse.Header.Builder
+module Network.Email.Header.Parse.Builder
     ( -- * Combinators
       (<+>)
     , optional

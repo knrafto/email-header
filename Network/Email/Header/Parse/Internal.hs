@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 -- | Parsing of basic header syntax, and helper functions.
-module Network.Email.Parse.Header.Internal
+module Network.Email.Header.Parse.Internal
     ( -- * Monad failure
       parseMaybe
     , parseEither
@@ -45,8 +45,8 @@ import qualified Data.Text                    as T
 import           Data.Word
 
 import qualified Network.Email.Charset              as CS
-import           Network.Email.Parse.Header.Builder ((<+>))
-import qualified Network.Email.Parse.Header.Builder as B
+import           Network.Email.Header.Parse.Builder ((<+>))
+import qualified Network.Email.Header.Parse.Builder as B
 
 -- | Return a 'Just' value, and 'fail' a 'Nothing' value.
 parseMaybe :: Monad m => String -> Maybe a -> m a
