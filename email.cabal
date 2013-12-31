@@ -29,8 +29,6 @@ library
     Network.Email.Charset
     Network.Email.Header
     Network.Email.Header.Parse
-    Network.Email.Header.Render.DateTime
-    Network.Email.Header.Render.Internal
     Network.Email.Types
 
   other-modules:
