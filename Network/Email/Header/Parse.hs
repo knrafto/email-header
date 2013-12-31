@@ -53,43 +53,41 @@ dateTime = do
           -> fail "day of week does not match date"
         _ -> return zoned
   where
-    dayOfWeek = dayName <* charSep ','
-    localTime = LocalTime <$> date <* cfws <*> timeOfDay
-    zonedTime = ZonedTime <$> localTime <* cfws <*> timeZone
+    dayOfWeek = dayName <* symbol ','
+    localTime = LocalTime <$> date <*> timeOfDay
+    zonedTime = ZonedTime <$> localTime <*> timeZone
 
     date      = do
-        d <- A8.decimal <* cfws
-        m <- month <* cfws
+        d <- lexeme A8.decimal
+        m <- month
         y <- year
         parseMaybe "invalid date" $ fromGregorianValid y m d
 
-    year      =              digits 4
-            <|> (+ 1900) <$> digits 3
-            <|> adjust   <$> digits 2
+    year      =              number 4
+            <|> (+ 1900) <$> number 3
+            <|> adjust   <$> number 2
       where
         adjust n | n < 50    = 2000 + n
                  | otherwise = 1900 + n
 
     timeOfDay = do
-        h <- digits 2
-        m <- colon *> digits 2
-        s <- option (0 :: Int) (colon *> digits 2)
+        h <- number 2
+        m <- symbol ':' *> number 2
+        s <- option (0 :: Int) (symbol ':' *> number 2)
         parseMaybe "invalid time of day" $
             makeTimeOfDayValid h m (fromIntegral s)
-      where
-        colon = charSep ':'
 
     timeZone  = minutesToTimeZone <$> timeZoneOffset
             <|> return utc
       where
-        timeZoneOffset = A8.signed $ do
+        timeZoneOffset = lexeme . A8.signed $ do
             hh <- digits 2
             mm <- digits 2
             if mm >= 60
                 then fail "invalid time zone"
                 else return $ hh * 60 + mm
 
-    listIndex = choice . map (\(n, s) -> n <$ A.string s) . zip [1..]
+    listIndex = lexeme . choice . map (\(n, s) -> n <$ A.string s) . zip [1..]
     dayName   = listIndex [ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" ]
     month     = listIndex [ "Jan", "Feb", "Mar", "Apr", "May", "Jun"
                           , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -114,7 +112,7 @@ mailboxList = commaSep mailbox
 
 -- | Parse a 'Recipient'.
 recipient :: Parser Recipient
-recipient = Group <$> phrase <* A8.char ':' <*> mailboxList <* A8.char ';'
+recipient = Group <$> phrase <* symbol ':' <*> mailboxList <* symbol ';'
         <|> Individual <$> mailbox
 
 -- | Parse a list of @'Recipient's@.
@@ -145,9 +143,9 @@ fromElements =
 phrase :: Parser L.Text
 phrase = fromElements <$> many1 element
   where
-    element = T.concat     <$> many1 (lexeme encodedWord)
-          <|> decodeLatin1 <$> lexeme quotedString
-          <|> decodeLatin1 <$> lexeme dotAtom
+    element = T.concat     <$> many1 encodedWord
+          <|> decodeLatin1 <$> quotedString
+          <|> decodeLatin1 <$> dotAtom
 
 -- | Parse a comma-separated list of phrases.
 phraseList :: Parser [L.Text]
@@ -158,17 +156,17 @@ phraseList = commaSep phrase
 unstructured :: Parser L.Text
 unstructured = fromElements <$> many element
   where
-    element = T.concat     <$> many1 (lexeme encodedWord)
-          <|> decodeLatin1 <$> lexeme textToken
+    element = T.concat     <$> many1 encodedWord
+          <|> decodeLatin1 <$> textToken
 
 -- | Parse the MIME version (which should be 1.0).
 mimeVersion :: Parser (Int, Int)
-mimeVersion = (,) <$> digits 1 <* charSep '.' <*> digits 1
+mimeVersion = (,) <$> number 1 <* symbol '.' <*> number 1
 
 -- | Parse the content type.
 contentType :: Parser (MimeType, Parameters)
-contentType = (,) <$> mimeType <* cfws <*> parameters
+contentType = (,) <$> mimeType <*> parameters
   where
-    mimeType   = MimeType <$> token <* charSep '/' <*> token
-    parameters = Map.fromList <$> many (A8.char ';' *> padded parameter)
-    parameter  = (,) <$> token <* charSep '=' <*> (token <|> quotedString)
+    mimeType   = MimeType <$> token <* symbol '/' <*> token
+    parameters = Map.fromList <$> many (symbol ';' *> parameter)
+    parameter  = (,) <$> token <* symbol '=' <*> (token <|> quotedString)

@@ -49,7 +49,7 @@ import           Network.Email.Types
 parseField :: HeaderName -> Parser a -> Headers -> Maybe a
 parseField k p hs = do
     field <- lookup k hs
-    maybeResult $ parse (P.padded p <* endOfInput) field
+    maybeResult $ parse (P.cfws *> p <* endOfInput) field
 
 -- | Get the value of the @Date:@ field.
 date :: Headers -> Maybe ZonedTime

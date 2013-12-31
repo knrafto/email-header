@@ -8,10 +8,10 @@ module Network.Email.Header.Parse.Internal
     , fws
     , cfws
     , lexeme
-    , padded
-    , charSep
+    , symbol
       -- * Numbers
     , digits
+    , number
       -- * Atoms
     , atom
     , dotAtom
@@ -90,13 +90,9 @@ cfws = () <$ fws `sepBy` comment
 lexeme :: Parser a -> Parser a
 lexeme p = p <* cfws
 
--- | Parse a value surrounded by whitespace.
-padded :: Parser a -> Parser a
-padded p = cfws *> p <* cfws
-
--- | Parse a character surrounded by whitespace.
-charSep :: Char -> Parser Char
-charSep = padded . A8.char
+-- | Parse a character followed by whitespace.
+symbol :: Char -> Parser Char
+symbol = lexeme . A8.char
 
 -- | Quickly (and unsafely) convert a digit to the number it represents.
 fromDigit :: Integral a => Word8 -> a
@@ -111,6 +107,10 @@ digits n = do
     unless (B.all A8.isDigit_w8 s) $
         fail $ "expected " ++ show n ++ " digits"
     return $ B.foldl' (\a w -> 10*a + fromDigit w) 0 s
+
+-- | Parse a number lexeme with a fixed number of digits.
+number :: Integral a => Int -> Parser a
+number = lexeme . digits
 
 -- | Parse a hexadecimal pair.
 hexPair :: Parser Word8
@@ -129,7 +129,7 @@ hexPair = decode <$> hexDigit <*> hexDigit
 -- | Parse an token lexeme consisting of all printable characters, but
 --  disallowing the specified special characters.
 tokenWith :: String -> Parser B.ByteString
-tokenWith specials = A.takeWhile1 isAtom
+tokenWith specials = lexeme (A.takeWhile1 isAtom)
   where
     isAtom w = w <= 126 && w >= 33 && A.notInClass specials w
 
@@ -149,11 +149,11 @@ token = tokenWith "()<>@,;:\\\"/[]?="
 
 -- | A raw, non-space token.
 textToken :: Parser B.ByteString
-textToken = A.takeWhile1 (not . A8.isSpace_w8)
+textToken = lexeme $ A.takeWhile1 (not . A8.isSpace_w8)
 
 -- | Parse a quoted-string.
 quotedString :: Parser B.ByteString
-quotedString =
+quotedString = lexeme $
     toByteString <$ A8.char '"' <*> concatMany quotedChar <* A8.char '"'
   where
     quotedChar = mempty <$ A.string "\r\n" 
@@ -162,7 +162,7 @@ quotedString =
 
 -- | Parse an encoded word, as per RFC 2047.
 encodedWord :: Parser T.Text
-encodedWord = do
+encodedWord = lexeme $ do
     _       <- A.string "=?"
     charset <- B8.unpack <$> tokenWith "()<>@,;:\"/[]?.="
     _       <- A8.char '?'
@@ -189,7 +189,7 @@ encodedWord = do
 
 -- | Return a quoted string as-is.
 scanString :: Char -> Char -> Parser Builder
-scanString start end = do
+scanString start end = lexeme $ do
     s <- byteString <$ A8.char start <*> A8.scan False f <* A8.char end
     return (char8 start <> s <> char8 end)
   where
@@ -203,8 +203,8 @@ scanString start end = do
 addrSpec :: Parser B.ByteString
 addrSpec = toByteString <$> (localPart <+> at <+> domain)
   where
-    at            = char8 <$> charSep '@'
-    dot           = char8 <$> charSep '.'
+    at            = char8 <$> symbol '@'
+    dot           = char8 <$> symbol '.'
     dotSep p      = p <+> concatMany (dot <+> p)
 
     addrAtom      = byteString <$> atom
@@ -216,7 +216,7 @@ addrSpec = toByteString <$> (localPart <+> at <+> domain)
 
 -- | Parse an address specification in angle brackets.
 angleAddrSpec :: Parser B.ByteString
-angleAddrSpec = A8.char '<' *> padded addrSpec <* A8.char '>'
+angleAddrSpec = symbol '<' *> addrSpec <* symbol '>'
 
 -- | @optionalSepBy p sep@ applies /zero/ or more occurrences of @p@,
 -- separated by @sep@. Null entries between separators will be filtered
@@ -233,4 +233,4 @@ optionalSepBy p sep = step
 
 -- | Parse a list of elements, separated by commas.
 commaSep :: Parser a -> Parser [a]
-commaSep p = optionalSepBy p (charSep ',')
+commaSep p = optionalSepBy p (symbol ',')
