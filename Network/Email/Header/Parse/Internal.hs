@@ -168,9 +168,9 @@ encodedWord = lexeme $ do
     _       <- A8.char '?'
     method  <- decodeMethod
     _       <- A8.char '?'
-    enc     <- CS.decode charset <$> method
+    enc     <- method
     _       <- A.string "?="
-    return enc
+    parseMaybe "charset not found" $ CS.decode charset enc
   where
     decodeMethod = quoted       <$ A.satisfy (`B.elem` "Qq")
                <|> base64String <$ A.satisfy (`B.elem` "Bb")
