@@ -1,158 +1,174 @@
-{-# LANGUAGE FlexibleContexts, OverloadedStrings #-}
--- | Parsing of common header fields.
+{-# LANGUAGE BangPatterns, OverloadedStrings #-}
+-- | Header parsers.
 module Network.Email.Header.Parse
-    ( -- * Origination date field
-      dateField
-      -- * Originator fields
-    , fromField
-    , senderField
-    , replyToField
-      -- * Destination address fields
-    , toField
-    , ccField
-    , bccField
-      -- * Identification fields
-    , messageIDField
-    , inReplyToField
-    , referencesField
-      -- * Informational fields
-    , subjectField
-    , commentsField
-    , keywordsField
-      -- * Resent fields
-    , resentDateField
-    , resentFromField
-    , resentSenderField
-    , resentToField
-    , resentCcField
-    , resentBccField
-    , resentMessageIDField
-      -- * MIME fields
-    , mimeVersionField
-    , contentTypeField
-    , contentTransferEncodingField
-    , contentIDField
+    ( -- * Date and time
+      dateTime
+      -- * Addresses
+    , address
+    , mailbox
+    , mailboxList
+    , recipient
+    , recipientList
+      -- * Message IDs
+    , messageID
+    , messageIDList
+      -- * Text
+    , phrase
+    , phraseList
+    , unstructured
+      -- * MIME
+    , mimeVersion
+    , contentType
     ) where
 
 import           Control.Applicative
+import           Data.Attoparsec             (Parser)
+import qualified Data.Attoparsec             as A
+import qualified Data.Attoparsec.Char8       as A8
 import           Data.Attoparsec.Combinator
-import           Data.Attoparsec.Lazy
-import qualified Data.ByteString            as B
-import qualified Data.Text.Lazy             as L
-import           Data.Time.LocalTime
+import           Data.Char
+import           Data.List
+import qualified Data.Map.Strict             as Map
+import           Data.Monoid
+import           Data.Time
+import           Data.Time.Calendar.WeekDate
+import qualified Data.Text                   as T
+import qualified Data.Text.Lazy              as L
+import           Data.Text.Lazy.Builder
+import           Data.Text.Encoding
 
-import Network.Email.Header.Parse.Address
-import Network.Email.Header.Parse.DateTime
 import Network.Email.Header.Parse.Internal
-import Network.Email.Header.Parse.MessageID
-import Network.Email.Header.Parse.Mime
-import Network.Email.Header.Parse.Text
-import Network.Email.Types
+import Network.Email.Types                 hiding (mimeType)
 
--- | Convert a 'Maybe' to an 'Either'.
-maybeToEither :: b -> Maybe a -> Either b a
-maybeToEither b = maybe (Left b) Right
+-- | Parse a date and time. Currently, non-numeric timezones (such as \"PDT\")
+-- are considered equivalent to UTC time.
+dateTime :: Parser ZonedTime
+dateTime = do
+    wday  <- optional dayOfWeek
+    zoned <- zonedTime
+    let (_, _, expected) =
+            toWeekDate . localDay . zonedTimeToLocalTime $ zoned
+    case wday of
+        Just actual | actual /= expected
+          -> fail "day of week does not match date"
+        _ -> return zoned
+  where
+    dayOfWeek = dayName <* charSep ','
+    localTime = LocalTime <$> date <* cfws <*> timeOfDay
+    zonedTime = ZonedTime <$> localTime <* cfws <*> timeZone
 
--- | Lookup and parse a header with a parser.
-parseField :: HeaderName -> Parser a -> Headers -> Either EmailError a
-parseField k p hs = do
-    field <- maybeToEither HeaderNotFound $ lookup k hs
-    case parse (padded p <* endOfInput) field of
-        Fail _ _ msg -> Left (HeaderParseError msg)
-        Done _ r     -> Right r
+    date      = do
+        d <- A8.decimal <* cfws
+        m <- month <* cfws
+        y <- year
+        parseMaybe "invalid date" $ fromGregorianValid y m d
 
--- | Get the value of the @Date:@ field.
-dateField :: Headers -> Either EmailError ZonedTime
-dateField = parseField "Date" dateTime
+    year      =              digits 4
+            <|> (+ 1900) <$> digits 3
+            <|> adjust   <$> digits 2
+      where
+        adjust n | n < 50    = 2000 + n
+                 | otherwise = 1900 + n
 
--- | Get the value of the @From:@ field.
-fromField :: Headers -> Either EmailError [Mailbox]
-fromField = parseField "From" mailboxList
+    timeOfDay = do
+        h <- digits 2
+        m <- colon *> digits 2
+        s <- option (0 :: Int) (colon *> digits 2)
+        parseMaybe "invalid time of day" $
+            makeTimeOfDayValid h m (fromIntegral s)
+      where
+        colon = charSep ':'
 
--- | Get the value of the @Sender:@ field.
-senderField :: Headers -> Either EmailError Mailbox
-senderField = parseField "Sender" mailbox
+    timeZone  = minutesToTimeZone <$> timeZoneOffset
+            <|> return utc
+      where
+        timeZoneOffset = A8.signed $ do
+            hh <- digits 2
+            mm <- digits 2
+            if mm >= 60
+                then fail "invalid time zone"
+                else return $ hh * 60 + mm
 
--- | Get the value of the @Reply-To:@ field.
-replyToField :: Headers -> Either EmailError [Recipient]
-replyToField = parseField "" recipientList
+    listIndex = choice . map (\(n, s) -> n <$ A.string s) . zip [1..]
+    dayName   = listIndex [ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" ]
+    month     = listIndex [ "Jan", "Feb", "Mar", "Apr", "May", "Jun"
+                          , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                          ]
 
--- | Get the value of the @To:@ field.
-toField :: Headers -> Either EmailError [Recipient]
-toField = parseField "To" recipientList
+-- | Parse an email address in angle brackets.
+angleAddr :: Parser Address
+angleAddr = Address <$> angleAddrSpec
 
--- | Get the value of the @Cc:@ field.
-ccField :: Headers -> Either EmailError [Recipient]
-ccField = parseField "Cc" recipientList
+-- | Parse an email address.
+address :: Parser Address
+address = Address <$> addrSpec
 
--- | Get the value of the @Bcc:@ field.
-bccField :: Headers -> Either EmailError (Maybe [Recipient])
-bccField = parseField "Bcc" (optional recipientList)
+-- | Parse a 'Mailbox'.
+mailbox :: Parser Mailbox
+mailbox = Mailbox <$> optional phrase <*> angleAddr
+      <|> Mailbox Nothing <$> address
 
--- | Get the value of the @Message-ID:@ field.
-messageIDField :: Headers -> Either EmailError MessageID
-messageIDField = parseField "Message-ID" messageID
+-- | Parse a list of @'Mailbox'es@.
+mailboxList :: Parser [Mailbox]
+mailboxList = commaSep mailbox
 
--- | Get the value of the @In-Reply-To:@ field.
-inReplyToField :: Headers -> Either EmailError [MessageID]
-inReplyToField = parseField "In-Reply-To" (many1 messageID)
+-- | Parse a 'Recipient'.
+recipient :: Parser Recipient
+recipient = Group <$> phrase <* A8.char ':' <*> mailboxList <* A8.char ';'
+        <|> Individual <$> mailbox
 
--- | Get the value of the @References:@ field.
-referencesField :: Headers -> Either EmailError [MessageID]
-referencesField = parseField "References" (many1 messageID)
+-- | Parse a list of @'Recipient's@.
+recipientList :: Parser [Recipient]
+recipientList = commaSep recipient
 
--- | Get the value of the @Subject:@ field.
-subjectField :: Headers -> Either EmailError L.Text
-subjectField = parseField "Subject" unstructured
+-- | Parse a message identifier.
+messageID :: Parser MessageID
+messageID = MessageID <$> angleAddrSpec
 
--- | Get the value of the @comments:@ field.
-commentsField :: Headers -> Either EmailError L.Text
-commentsField = parseField "Comments" unstructured
+-- | Parse a list of message identifiers.
+messageIDList :: Parser [MessageID]
+messageIDList = many1 messageID
 
--- | Get the value of the @Keywords:@ field.
-keywordsField :: Headers -> Either EmailError [L.Text]
-keywordsField = parseField "Keywords" phraseList
+-- | Combine a list of text elements (atoms, quoted strings, encoded words,
+-- etc.) into a larger phrase.
+fromElements :: [T.Text] -> L.Text
+fromElements =
+    toLazyText . mconcat . intersperse (singleton ' ') .
+    map fromText . concatMap splitElement
+  where
+    splitElement = filter (not . T.null) . T.split isSep
+    isSep c      = isControl c || isSpace c
 
--- | Get the value of the @Resent-Date:@ field.
-resentDateField :: Headers -> Either EmailError ZonedTime
-resentDateField = parseField "Resent-Date" dateTime
+-- | Parse a phrase. Adjacent encoded words are concatenated. White space
+-- is reduced to a single space, except when quoted or part of an encoded
+-- word.
+phrase :: Parser L.Text
+phrase = fromElements <$> many1 element
+  where
+    element = T.concat     <$> many1 (lexeme encodedWord)
+          <|> decodeLatin1 <$> lexeme quotedString
+          <|> decodeLatin1 <$> lexeme dotAtom
 
--- | Get the value of the @Resent-From:@ field.
-resentFromField :: Headers -> Either EmailError [Mailbox]
-resentFromField = parseField "Resent-From" mailboxList
+-- | Parse a comma-separated list of phrases.
+phraseList :: Parser [L.Text]
+phraseList = commaSep phrase
 
--- | Get the value of the @Resent-Sender:@ field.
-resentSenderField :: Headers -> Either EmailError Mailbox
-resentSenderField = parseField "Resent-Sender" mailbox
+-- | Parse unstructured text. Adjacent encoded words are concatenated.
+-- White space is reduced to a single space.
+unstructured :: Parser L.Text
+unstructured = fromElements <$> many element
+  where
+    element = T.concat     <$> many1 (lexeme encodedWord)
+          <|> decodeLatin1 <$> lexeme textToken
 
--- | Get the value of the @Resent-To:@ field.
-resentToField :: Headers -> Either EmailError [Recipient]
-resentToField = parseField "Resent-To" recipientList
+-- | Parse the MIME version (which should be 1.0).
+mimeVersion :: Parser (Int, Int)
+mimeVersion = (,) <$> digits 1 <* charSep '.' <*> digits 1
 
--- | Get the value of the @Resent-Cc:@ field.
-resentCcField :: Headers -> Either EmailError [Recipient]
-resentCcField = parseField "Resent-Cc" recipientList
-
--- | Get the value of the @Resent-Bcc:@ field.
-resentBccField :: Headers -> Either EmailError (Maybe [Recipient])
-resentBccField = parseField "" (optional recipientList)
-
--- | Get the value of the @Resent-Message-ID:@ field.
-resentMessageIDField :: Headers -> Either EmailError MessageID
-resentMessageIDField = parseField "Resent-Message-ID" messageID
-
--- | Get the value of the @MIME-Version:@ field.
-mimeVersionField :: Headers -> Either EmailError (Int, Int)
-mimeVersionField = parseField "MIME-Version" mimeVersion
-
--- | Get the value of the @Content-Type:@ field.
-contentTypeField :: Headers -> Either EmailError (MimeType, Parameters)
-contentTypeField = parseField "Content-Type:" contentType
-
--- | Get the value of the @Content-Transfer-Encoding:@ field.
-contentTransferEncodingField :: Headers -> Either EmailError B.ByteString
-contentTransferEncodingField = parseField "Content-Transfer-Encoding" token
-
--- | Get the value of the @Content-ID:@ field.
-contentIDField :: Headers -> Either EmailError MessageID
-contentIDField = parseField "Content-ID" messageID
+-- | Parse the content type.
+contentType :: Parser (MimeType, Parameters)
+contentType = (,) <$> mimeType <* cfws <*> parameters
+  where
+    mimeType   = MimeType <$> token <* charSep '/' <*> token
+    parameters = Map.fromList <$> many (A8.char ';' *> padded parameter)
+    parameter  = (,) <$> token <* charSep '=' <*> (token <|> quotedString)

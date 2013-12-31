@@ -9,6 +9,7 @@ module Network.Email.Header.Parse.Internal
     , cfws
     , lexeme
     , padded
+    , charSep
       -- * Numbers
     , digits
       -- * Atoms
@@ -42,9 +43,17 @@ import           Data.Monoid
 import qualified Data.Text                    as T
 import           Data.Word
 
-import qualified Network.Email.Charset              as CS
-import           Network.Email.Header.Parse.Builder ((<+>))
-import qualified Network.Email.Header.Parse.Builder as B
+import qualified Network.Email.Charset        as CS
+
+infixl 3 <+>
+
+-- | Concatenate the results of two parsers.
+(<+>) :: (Applicative f, Monoid a) => f a -> f a -> f a
+(<+>) = liftA2 mappend
+
+-- | Repeat and concatenate.
+concatMany :: (Alternative f, Monoid a) => f a -> f a
+concatMany p = mconcat <$> many p
 
 -- | Return a 'Just' value, and 'fail' a 'Nothing' value.
 parseMaybe :: Monad m => String -> Maybe a -> m a
@@ -77,13 +86,17 @@ comment = A8.char '(' *> A.scan (0 :: Int, False) f <* A8.char ')'
 cfws :: Parser ()
 cfws = () <$ fws `sepBy` comment
 
--- | Parse a value, followed by whitespace.
+-- | Parse a value followed by whitespace.
 lexeme :: Parser a -> Parser a
 lexeme p = p <* cfws
 
--- | Parse a value, surrounded by whitespace.
+-- | Parse a value surrounded by whitespace.
 padded :: Parser a -> Parser a
 padded p = cfws *> p <* cfws
+
+-- | Parse a character surrounded by whitespace.
+charSep :: Char -> Parser Char
+charSep = padded . A8.char
 
 -- | Quickly (and unsafely) convert a digit to the number it represents.
 fromDigit :: Integral a => Word8 -> a
@@ -140,11 +153,12 @@ textToken = A.takeWhile1 (not . A8.isSpace_w8)
 
 -- | Parse a quoted-string.
 quotedString :: Parser B.ByteString
-quotedString = toByteString <$ A8.char '"' <*> B.many go <* A8.char '"'
+quotedString =
+    toByteString <$ A8.char '"' <*> concatMany quotedChar <* A8.char '"'
   where
-    go = mempty <$ A.string "\r\n" 
-     <|> A8.char '\\' *> B.anyWord8
-     <|> B.satisfy (/= '"')
+    quotedChar = mempty <$ A.string "\r\n" 
+             <|> word8 <$ A8.char '\\' <*> A.anyWord8
+             <|> char8 <$> A8.satisfy (/= '"')
 
 -- | Parse an encoded word, as per RFC 2047.
 encodedWord :: Parser T.Text
@@ -152,24 +166,32 @@ encodedWord = do
     _       <- A.string "=?"
     charset <- B8.unpack <$> tokenWith "()<>@,;:\"/[]?.="
     _       <- A8.char '?'
-    method  <- quoted       <$ A.satisfy (`B.elem` "Qq") <|>
-               base64String <$ A.satisfy (`B.elem` "Bb")
+    method  <- decodeMethod
     _       <- A8.char '?'
     enc     <- CS.decode charset <$> method
     _       <- A.string "?="
     return enc
   where
-    base64String = do s <- A8.takeWhile (/= '?')
-                      parseEither (Base64.decode s)
-    quoted       = toByteString <$> B.many go
+    decodeMethod = quoted       <$ A.satisfy (`B.elem` "Qq")
+               <|> base64String <$ A.satisfy (`B.elem` "Bb")
 
-    go           = char8 ' ' <$ A8.char '_'
+    quoted       = toByteString <$> concatMany quotedChar
+
+    quotedChar   = char8 ' ' <$ A8.char '_'
                <|> word8 <$ A8.char '=' <*> hexPair
-               <|> B.satisfy (\c -> not (A8.isSpace c || c == '?'))
+               <|> char8 <$> A8.satisfy (not . isBreak)
+
+    isBreak c    = A8.isSpace c || c == '?'
+
+    base64String = do
+        s <- A8.takeWhile (/= '?')
+        parseEither (Base64.decode s)
 
 -- | Return a quoted string as-is.
-scanString :: Char -> Parser Builder
-scanString end = byteString <$> A8.scan False f
+scanString :: Char -> Char -> Parser Builder
+scanString start end = do
+    s <- byteString <$ A8.char start <*> A8.scan False f <* A8.char end
+    return (char8 start <> s <> char8 end)
   where
     f True  _       = Just False
     f False c
@@ -179,13 +201,15 @@ scanString end = byteString <$> A8.scan False f
 
 -- | Parse an email address, stripping out whitespace and comments.
 addrSpec :: Parser B.ByteString
-addrSpec = toByteString <$> (localPart <+> padded (B.char8 '@') <+> domain)
+addrSpec = toByteString <$> (localPart <+> at <+> domain)
   where
-    dotSep p      = p `B.sepBy1` padded (B.char8 '.')
+    at            = char8 <$> charSep '@'
+    dot           = char8 <$> charSep '.'
+    dotSep p      = p <+> concatMany (dot <+> p)
 
     addrAtom      = byteString <$> atom
-    addrQuote     = B.char8 '"' <+> scanString '"' <+> B.char8 '"'
-    domainLiteral = B.char8 '[' <+> scanString ']' <+> B.char8 ']'
+    addrQuote     = scanString '"' '"'
+    domainLiteral = scanString '[' ']'
 
     localPart     = dotSep (addrAtom <|> addrQuote)
     domain        = dotSep addrAtom <|> domainLiteral
@@ -200,10 +224,13 @@ angleAddrSpec = A8.char '<' *> padded addrSpec <* A8.char '>'
 optionalSepBy :: Alternative f => f a -> f s -> f [a]
 optionalSepBy p sep = step
   where
-    step  = sep *> step
-        <|> (:) <$> p <*> (sep *> step <|> pure [])
-        <|> pure []
+    step = sep *> step
+       <|> (:) <$> p <*> end
+       <|> pure []
+
+    end  = sep *> step
+       <|> pure []
 
 -- | Parse a list of elements, separated by commas.
 commaSep :: Parser a -> Parser [a]
-commaSep p = optionalSepBy p (padded $ A8.char ',')
+commaSep p = optionalSepBy p (charSep ',')

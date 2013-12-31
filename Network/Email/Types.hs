@@ -3,7 +3,6 @@ module Network.Email.Types
     ( Headers
     , HeaderName
     , HeaderField
-    , EmailError(..)
     , Address(..)
     , Mailbox(..)
     , Recipient(..)
@@ -15,7 +14,7 @@ module Network.Email.Types
 import qualified Data.ByteString      as B
 import qualified Data.ByteString.Lazy as L
 import           Data.CaseInsensitive (CI)
-import           Data.Map             (Map)
+import           Data.Map.Strict      (Map)
 import qualified Data.Text.Lazy       as L
 
 -- | A set of email headers.
@@ -26,12 +25,6 @@ type HeaderName = CI B.ByteString
 
 -- | The email header field.
 type HeaderField = L.ByteString
-
--- | An email parsing error type.
-data EmailError
-    = HeaderParseError String
-    | HeaderNotFound
-    deriving (Eq, Show)
 
 -- | An email address.
 newtype Address = Address B.ByteString

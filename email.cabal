@@ -27,17 +27,14 @@ library
 
   exposed-modules:
     Network.Email.Charset
+    Network.Email.Header
     Network.Email.Header.Parse
-    Network.Email.Header.Parse.Address
-    Network.Email.Header.Parse.Builder
-    Network.Email.Header.Parse.DateTime
-    Network.Email.Header.Parse.Internal
-    Network.Email.Header.Parse.MessageID
-    Network.Email.Header.Parse.Mime
-    Network.Email.Header.Parse.Text
     Network.Email.Header.Render.DateTime
     Network.Email.Header.Render.Internal
     Network.Email.Types
+
+  other-modules:
+    Network.Email.Header.Parse.Internal
 
   ghc-options: -Wall
 
