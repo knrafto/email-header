@@ -1,8 +1,10 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 -- | Header parsers.
 module Network.Email.Header.Parse
-    ( -- * Date and time
-      dateTime
+    (  -- * Whitespace
+      cfws
+       -- * Date and time
+    , dateTime
       -- * Addresses
     , address
     , mailbox

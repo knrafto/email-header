@@ -56,6 +56,3 @@ test-suite tests
     tasty-hunit,
     tasty-quickcheck,
     time
-
-  other-modules:
-    DocGen

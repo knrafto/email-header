@@ -5,9 +5,8 @@ module Main
     ) where
 
 import Control.Applicative
-import Data.Attoparsec
+import Data.Attoparsec.Lazy
 import Data.ByteString.Lazy.Builder
-import qualified Data.ByteString.Lazy as L
 import Data.Monoid
 import Data.String
 import Data.Time.Calendar
@@ -18,38 +17,39 @@ import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
-import qualified Network.Email.Parse.Header.DateTime as P
-import Network.Email.Parse.Header.Internal
-import qualified Network.Email.Render.Header.DateTime as R
+import qualified Network.Email.Header.Parse as P
 
-import           Render (Render(..), Doc)
-import qualified Render as R
+infixl 3 <+>
 
-fws :: Doc
-fws = R.oneof [" ", "  "]
+instance IsString Builder where
+    fromString = string8
 
-cfws :: Doc
-cfws = R.frequency [(9, fws), (1, "(comment)")]
+instance IsString a => IsString (Gen a) where
+    fromString = pure . fromString
 
-ocfws :: Doc
-ocfws = R.option cfws
+(<+>) :: (Applicative f, Monoid a) => f a -> f a -> f a
+(<+>) = liftA2 mappend
 
-checkParser :: (Arbitrary a, Render a, Eq a, Show a) => Parser a -> Property
-checkParser p = property $ \a ->
-    forAll (R.renderDoc $ render a) $ \s ->
-    case parseOnly (skipCfws *> p) s of
-        Left  _ -> False
-        Right r -> r == a
+sometimes :: Monoid a => Gen a -> Gen a
+sometimes gen = oneof [pure mempty, gen]
 
-checkRenderer
-    :: (Arbitrary a, Eq a, Show a)
-    => Parser a
-    -> (a -> Builder)
-    -> Property
-checkRenderer p r = property $ \a ->
-    case parseOnly (skipCfws *> p) (L.toStrict . toLazyByteString $ r a) of
-        Left  _ -> False
-        Right r -> r == a
+rarely :: Monoid a => Gen a -> Gen a
+rarely gen = frequency [(9, pure mempty), (1, gen)]
+
+fws :: Gen Builder
+fws = " " <+> rarely ("\r\n" <+> fws)
+
+cfws :: Gen Builder
+cfws = fws  -- TODO
+
+ocfws :: Gen Builder
+ocfws = sometimes cfws
+
+pad :: Gen Builder -> Gen Builder
+pad gen = ocfws <+> gen <+> ocfws
+
+class Render a where
+    render :: a -> Gen Builder
 
 instance Eq ZonedTime where
     ZonedTime t1 z1 == ZonedTime t2 z2 = (t1, z1) == (t2, z2)
@@ -67,45 +67,53 @@ instance Arbitrary ZonedTime where
         zone = minutesToTimeZone <$> choose (-12*60, 14*60)
 
 instance Render ZonedTime where
-    render t = R.option (ocfws <> format "%a" <> ocfws <> ",")
-            <> ocfws <> R.oneof [format "%d", format "%e"]
-            <> cfws <> format "%b"
-            <> cfws <> year
-            <> cfws <> format "%H"
-            <> ocfws <> ":" <> ocfws <> format "%M"
-            <> ocfws <> seconds
-            -- TODO: obs-zone
-            <> cfws <> format "%z"
-            <> ocfws
+    render t = sometimes (dayOfWeek <+> ",") <+> date <+> time
       where
-        format str = fromString $ formatTime defaultTimeLocale str t
+        format str = pad . fromString $ formatTime defaultTimeLocale str t
+
+        dayOfWeek  = format "%a"
+        date       = day <+> month <+> year <+> cfws
+        day        = oneof [format "%d", format "%e"]
+        month      = format "%b"
 
         -- TODO: 3-digit years
-        year = R.oneof $
+        year       = oneof $
             [ format "%0Y" ] ++
             [ format "%y" | 1950 <= y && y < 2000 ] ++
             [ format "%y" | 2000 <= y && y < 2050 ]
           where
             (y,_,_) = toGregorian . localDay $ zonedTimeToLocalTime t
 
-        seconds
-            | s == (0 :: Int) = mempty
-            | otherwise       = ":" <> ocfws <> format "%S"
+        time       = timeOfDay <+> zone
+        timeOfDay  = hour <+> minute <+> second
+        hour       = format "%H"
+        minute     = ":" <+> format "%M"
+        second
+            | s == (0 :: Int) = ocfws
+            | otherwise       = ":" <+> format "%S"
           where
             s = floor . todSec . localTimeOfDay $ zonedTimeToLocalTime t
 
-tests :: TestTree
-tests = testGroup "tests" [parsers, renderers]
+        -- TODO: obs-zone
+        zone = format "%z"
+
+checkParser :: (Arbitrary a, Render a, Eq a, Show a) => Parser a -> Property
+checkParser p =
+    property $ \a ->
+    forAll (toLazyByteString <$> pad (render a)) $ \s ->
+    case parse (P.cfws *> p <* endOfInput) s of
+        Fail _ _ _ -> False
+        Done _ r   -> r == a
+
+testParser
+    :: (Arbitrary a, Render a, Eq a, Show a)
+    => String -> Parser a -> TestTree
+testParser name p = testProperty name (checkParser p)
 
 parsers :: TestTree
 parsers = testGroup "parsers"
-    [ testProperty "date-time" $ checkParser P.dateTime
-    ]
-
-renderers :: TestTree
-renderers = testGroup "renderers"
-    [ testProperty "date-time" $ checkRenderer P.dateTime R.dateTime
+    [ testParser "date-time" P.dateTime
     ]
 
 main :: IO ()
-main = defaultMain tests
+main = defaultMain parsers
