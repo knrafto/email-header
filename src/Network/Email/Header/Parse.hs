@@ -28,15 +28,12 @@ import           Data.Attoparsec             (Parser)
 import qualified Data.Attoparsec             as A
 import qualified Data.Attoparsec.Char8       as A8
 import           Data.Attoparsec.Combinator
-import           Data.Char
 import           Data.List
 import qualified Data.Map.Strict             as Map
-import           Data.Monoid
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
 import qualified Data.Text                   as T
 import qualified Data.Text.Lazy              as L
-import           Data.Text.Lazy.Builder
 import           Data.Text.Encoding
 
 import Network.Email.Header.Parse.Internal
@@ -132,12 +129,7 @@ messageIDList = many1 messageID
 -- | Combine a list of text elements (atoms, quoted strings, encoded words,
 -- etc.) into a larger phrase.
 fromElements :: [T.Text] -> L.Text
-fromElements =
-    toLazyText . mconcat . intersperse (singleton ' ') .
-    map fromText . concatMap splitElement
-  where
-    splitElement = filter (not . T.null) . T.split isSep
-    isSep c      = isControl c || isSpace c
+fromElements = L.fromChunks . intersperse (T.singleton ' ')
 
 -- | Parse a phrase. Adjacent encoded words are concatenated. White space
 -- is reduced to a single space, except when quoted or part of an encoded
@@ -154,7 +146,8 @@ phraseList :: Parser [L.Text]
 phraseList = commaSep phrase
 
 -- | Parse unstructured text. Adjacent encoded words are concatenated.
--- White space is reduced to a single space.
+-- White space is reduced to a single space, except when part of an encoded
+-- word.
 unstructured :: Parser L.Text
 unstructured = fromElements <$> many element
   where
