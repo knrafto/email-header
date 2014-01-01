@@ -21,6 +21,21 @@ import qualified Network.Email.Header.Parse as P
 
 infixl 3 <+>
 
+instance Eq ZonedTime where
+    ZonedTime t1 z1 == ZonedTime t2 z2 = (t1, z1) == (t2, z2)
+
+instance Arbitrary ZonedTime where
+    arbitrary = ZonedTime <$> local <*> zone
+      where
+        local = do
+            h <- choose (0, 23)
+            m <- choose (0, 59)
+            s <- fromInteger <$> choose (0, 60)
+            d <- choose (0, 50000)
+            return $ LocalTime (ModifiedJulianDay d) (TimeOfDay h m s)
+
+        zone = minutesToTimeZone <$> choose (-12*60, 14*60)
+
 instance IsString Builder where
     fromString = string8
 
@@ -48,71 +63,60 @@ ocfws = sometimes cfws
 pad :: Gen Builder -> Gen Builder
 pad gen = ocfws <+> gen <+> ocfws
 
-class Render a where
-    render :: a -> Gen Builder
+dateTime :: ZonedTime -> Gen Builder
+dateTime t = sometimes (dayOfWeek <+> ",") <+> date <+> time
+  where
+    format str = pad . fromString $ formatTime defaultTimeLocale str t
 
-instance Eq ZonedTime where
-    ZonedTime t1 z1 == ZonedTime t2 z2 = (t1, z1) == (t2, z2)
+    dayOfWeek  = format "%a"
+    date       = day <+> month <+> year <+> cfws
+    day        = oneof [format "%d", format "%e"]
+    month      = format "%b"
 
-instance Arbitrary ZonedTime where
-    arbitrary = ZonedTime <$> local <*> zone
+    -- TODO: 3-digit years
+    year       = oneof $
+        [ format "%0Y" ] ++
+        [ format "%y" | 1950 <= y && y < 2000 ] ++
+        [ format "%y" | 2000 <= y && y < 2050 ]
       where
-        local = do
-            h <- choose (0, 23)
-            m <- choose (0, 59)
-            s <- fromInteger <$> choose (0, 60)
-            d <- choose (0, 50000)
-            return $ LocalTime (ModifiedJulianDay d) (TimeOfDay h m s)
+        (y,_,_) = toGregorian . localDay $ zonedTimeToLocalTime t
 
-        zone = minutesToTimeZone <$> choose (-12*60, 14*60)
-
-instance Render ZonedTime where
-    render t = sometimes (dayOfWeek <+> ",") <+> date <+> time
+    time       = timeOfDay <+> zone
+    timeOfDay  = hour <+> minute <+> second
+    hour       = format "%H"
+    minute     = ":" <+> format "%M"
+    second
+        | s == (0 :: Int) = ocfws
+        | otherwise       = ":" <+> format "%S"
       where
-        format str = pad . fromString $ formatTime defaultTimeLocale str t
+        s = floor . todSec . localTimeOfDay $ zonedTimeToLocalTime t
 
-        dayOfWeek  = format "%a"
-        date       = day <+> month <+> year <+> cfws
-        day        = oneof [format "%d", format "%e"]
-        month      = format "%b"
+    -- TODO: obs-zone
+    zone = format "%z"
 
-        -- TODO: 3-digit years
-        year       = oneof $
-            [ format "%0Y" ] ++
-            [ format "%y" | 1950 <= y && y < 2000 ] ++
-            [ format "%y" | 2000 <= y && y < 2050 ]
-          where
-            (y,_,_) = toGregorian . localDay $ zonedTimeToLocalTime t
-
-        time       = timeOfDay <+> zone
-        timeOfDay  = hour <+> minute <+> second
-        hour       = format "%H"
-        minute     = ":" <+> format "%M"
-        second
-            | s == (0 :: Int) = ocfws
-            | otherwise       = ":" <+> format "%S"
-          where
-            s = floor . todSec . localTimeOfDay $ zonedTimeToLocalTime t
-
-        -- TODO: obs-zone
-        zone = format "%z"
-
-checkParser :: (Arbitrary a, Render a, Eq a, Show a) => Parser a -> Property
-checkParser p =
+checkParser
+    :: (Arbitrary a, Eq a, Show a)
+    => Parser a
+    -> (a -> Gen Builder)
+    -> Property
+checkParser p f =
     property $ \a ->
-    forAll (toLazyByteString <$> pad (render a)) $ \s ->
+    forAll (toLazyByteString <$> f a) $ \s ->
     case parse (P.cfws *> p <* endOfInput) s of
         Fail _ _ _ -> False
         Done _ r   -> r == a
 
 testParser
-    :: (Arbitrary a, Render a, Eq a, Show a)
-    => String -> Parser a -> TestTree
-testParser name p = testProperty name (checkParser p)
+    :: (Arbitrary a, Eq a, Show a)
+    => String
+    -> Parser a
+    -> (a -> Gen Builder)
+    -> TestTree
+testParser name p f = testProperty name (checkParser p f)
 
 parsers :: TestTree
 parsers = testGroup "parsers"
-    [ testParser "date-time" P.dateTime
+    [ testParser "date-time" P.dateTime dateTime
     ]
 
 main :: IO ()
