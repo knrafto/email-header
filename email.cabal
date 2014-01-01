@@ -33,9 +33,6 @@ library
     Network.Email.Header.Parse
     Network.Email.Types
 
-  other-modules:
-    Network.Email.Header.Parse.Internal
-
   ghc-options: -Wall -O2
 
 test-suite tests

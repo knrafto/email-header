@@ -41,8 +41,7 @@ import qualified Data.ByteString            as B
 import qualified Data.Text.Lazy             as L
 import           Data.Time.LocalTime
 
-import qualified Network.Email.Header.Parse          as P
-import qualified Network.Email.Header.Parse.Internal as P
+import qualified Network.Email.Header.Parse as P
 import           Network.Email.Types
 
 -- | Lookup and parseField a header with a parseFieldr.
@@ -141,7 +140,8 @@ contentType = parseField "Content-Type:" P.contentType
 
 -- | Get the value of the @Content-Transfer-Encoding:@ field.
 contentTransferEncoding :: Headers -> Maybe B.ByteString
-contentTransferEncoding = parseField "Content-Transfer-Encoding" P.token
+contentTransferEncoding =
+    parseField "Content-Transfer-Encoding" P.contentTransferEncoding
 
 -- | Get the value of the @Content-ID:@ field.
 contentID :: Headers -> Maybe MessageID
