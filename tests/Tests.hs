@@ -36,6 +36,14 @@ instance Arbitrary ZonedTime where
 
         zone = minutesToTimeZone <$> choose (-12*60, 14*60)
 
+newtype MimeVersion = MimeVersion (Int, Int)
+    deriving (Eq, Show)
+
+instance Arbitrary MimeVersion where
+    arbitrary = MimeVersion <$> liftA2 (,) digit digit
+      where
+        digit = choose (0, 9)
+
 instance IsString Builder where
     fromString = string8
 
@@ -94,6 +102,12 @@ dateTime t = sometimes (dayOfWeek <+> ",") <+> date <+> time
     -- TODO: obs-zone
     zone = format "%z"
 
+mimeVersion :: MimeVersion -> Gen Builder
+mimeVersion (MimeVersion (major, minor)) =
+    decimal major <+> "." <+> decimal minor
+  where
+    decimal = fromString . show
+
 checkParser
     :: (Arbitrary a, Eq a, Show a)
     => Parser a
@@ -117,6 +131,7 @@ testParser name p f = testProperty name (checkParser p f)
 parsers :: TestTree
 parsers = testGroup "parsers"
     [ testParser "date-time" P.dateTime dateTime
+    , testParser "MIME version" (MimeVersion <$> P.mimeVersion) mimeVersion
     ]
 
 main :: IO ()
