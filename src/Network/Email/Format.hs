@@ -31,6 +31,7 @@ module Network.Email.Format
     , vsep
     , fillSep
     , sep
+    , punctuate
       -- * Rendering
     , RenderOptions(..)
     , defaultRenderOptions
@@ -170,6 +171,14 @@ vsep = fold above
 -- | Concatenate with either @(\<+\>)@ or 'linebreak's.
 sep :: [Doc] -> Doc
 sep = group . vsep
+
+-- | @punctuate p xs@ appends @p@ to all except the last document of @xs@.
+punctuate :: Doc -> [Doc] -> [Doc]
+punctuate p = go
+  where
+    go []     = []
+    go [x]    = [x]
+    go (x:xs) = (x <> p) : go xs
 
 -- | Concatenates with @(\</\>)@ as long as its fits the page, than
 -- inserts a @line@ and continues doing that for all documents in
