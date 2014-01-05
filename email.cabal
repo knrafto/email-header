@@ -31,9 +31,9 @@ library
     Network.Email.Charset
     Network.Email.Layout
     Network.Email.Header
-    Network.Email.Header.Builder.PrettyPrint
+    Network.Email.Header.Builder.Format
     Network.Email.Header.Parse
-    Network.Email.PrettyPrint
+    Network.Email.Format
     Network.Email.Types
 
   ghc-options: -Wall -O2

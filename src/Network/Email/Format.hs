@@ -1,5 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- | A simple pretty printer, based on Philip Walder.
-module Network.Email.PrettyPrint
+module Network.Email.Format
     ( -- * Documents
       Doc
       -- * Primitives
@@ -32,6 +33,7 @@ module Network.Email.PrettyPrint
     , sep
       -- * Rendering
     , RenderOptions(..)
+    , defaultRenderOptions
     , render
     ) where
 
@@ -180,6 +182,14 @@ data RenderOptions = RenderOptions
     { lineWidth :: Int
     , newline   :: B.ByteString
     , indent    :: B.ByteString
+    }
+
+-- | Default rendering options.
+defaultRenderOptions :: RenderOptions
+defaultRenderOptions = RenderOptions
+    { lineWidth = 80
+    , newline   = "\r\n"
+    , indent    = " "
     }
 
 -- | Render a document to a 'Builder'.

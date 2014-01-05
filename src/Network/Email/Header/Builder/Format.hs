@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Network.Email.Header.Builder.PrettyPrint
+module Network.Email.Header.Builder.Format
     ( -- * Date and time
       dateTime
     ) where
@@ -9,7 +9,7 @@ import Data.Time.Format
 import Data.Time.LocalTime
 import System.Locale
 
-import Network.Email.PrettyPrint
+import Network.Email.Format
 
 -- | Render a date and time. TODO: proper spacing
 dateTime :: ZonedTime -> Doc
