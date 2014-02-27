@@ -1,216 +1,102 @@
-{-# LANGUAGE OverloadedStrings #-}
 -- | A simple pretty printer, based on Philip Walder.
 module Network.Email.Format
-    ( -- * Documents
-      Doc
-      -- * Primitives
+    ( -- * Layouts
+      Layout
+    , layout
+    , span
+    , break
+    , position
+    , nicest
+      -- * Documents
+    , Doc
+    , render
     , prim
     , union
     , group
     , flatten
-    , options
-      -- * Text
-    , builder
-    , word8
-    , byteString
-      -- * Whitespace
-    , space
-    , line
-    , linebreak
-    , softline
-    , softbreak
-    , hardbreak
-      -- * Operators
-    , (<+>)
-    , above
-    , (</>)
-    , aboveBreak
-    , (<//>)
-      -- * Lists
-    , hsep
-    , vsep
-    , fillSep
-    , sep
-    , punctuate
-      -- * Rendering
-    , RenderOptions(..)
-    , defaultRenderOptions
-    , render
     ) where
 
-import           Data.Monoid
-import qualified Data.ByteString              as B
-import qualified Data.ByteString.Char8        as B8
-import           Data.ByteString.Lazy.Builder (Builder)
-import           Data.String
-import           Data.Word
+import Prelude     hiding (span, break)
 
-import           Network.Email.Layout         (Layout)
-import qualified Network.Email.Layout         as Layout
+import Data.Monoid
 
-infixr 5 </>, <//>, `above`, `aboveBreak`
-infixr 6 <+>
+type LayoutStep a = Int -> (Int -> Bool, a)
+
+-- | An abstract type representing a lazy layout.
+newtype Layout a = Layout { runLayout :: LayoutStep a -> LayoutStep a }
+
+instance Monoid (Layout a) where
+    mempty      = Layout id
+    mappend a b = Layout $ runLayout a . runLayout b
+
+-- | Run a layout with an initial position to produce a rendered 'Builder'.
+layout :: Monoid a => Layout a -> Int -> a
+layout l p = snd (runLayout l (\_ -> (const True, mempty)) p)
+
+-- | Layout a an element of a given length.
+span :: Monoid a => Int -> a -> Layout a
+span k s = Layout $ \c p ->
+    let (fits, b) = c (p + k)
+    in  (\w -> p <= w && fits w, s <> b)
+
+-- | Layout a new line and set the initial position.
+break :: Int -> Layout a
+break i = Layout $ \c p ->
+    let (_, b) = c i
+    in  (\w -> p <= w, b)
+
+-- | Use the current line position to produce a layout.
+position :: (Int -> Layout a) -> Layout a
+position f = Layout $ \c p -> runLayout (f p) c p
+
+-- | Choose the first layout if the first line fits within the given length,
+-- and the second otherwise.
+nicest :: Int -> Layout a -> Layout a -> Layout a
+nicest w x y = Layout $ \c p ->
+    let a@(fits, _) = runLayout x c p
+        b           = runLayout y c p
+    in  if fits w then a else b
 
 -- | A formatted document.
-data Doc
+data Doc a
     = Empty
-    | Prim Bool (Bool -> Layout)
-    | Cat Doc Doc
-    | Union Doc Doc
-    | Options (RenderOptions -> Doc)
+    | Prim Bool (Bool -> Layout a)
+    | Cat (Doc a) (Doc a)
+    | Union (Doc a) (Doc a)
 
-instance Monoid Doc where
+instance Monoid (Doc a) where
     mempty  = Empty
     mappend = Cat
-
-instance IsString Doc where
-    fromString = byteString . B8.pack
 
 -- | Construct a primitive document from a layout function. Its parameter
 -- indicates whether the containing group is laid out horizontally instead of
 -- vertically.
-prim :: (Bool -> Layout) -> Doc
+prim :: (Bool -> Layout a) -> Doc a
 prim = Prim False
 
 -- | Use the first document if the current line will fit on the page.
 -- Otherwise, use the second document.
-union :: Doc -> Doc -> Doc
+union :: Doc a -> Doc a -> Doc a
 union = Union
 
 -- | Specify an alternative layout with all line breaks flattened.
-group :: Doc -> Doc
+group :: Doc a -> Doc a
 group x = union (flatten x) x
 
 -- | Flatten a document to a horizontal layout.
-flatten :: Doc -> Doc
+flatten :: Doc a -> Doc a
 flatten Empty       = Empty
 flatten (Prim _ f)  = Prim True f
 flatten (Cat x y)   = Cat (flatten x) (flatten y)
 flatten (Union x _) = x
-flatten (Options f) = Options (flatten . f)
 
--- | Construct a document using the given 'RenderOptions'.
-options :: (RenderOptions -> Doc) -> Doc
-options = Options
-
--- | Construct a document from a 'Builder' with the given length.
-builder :: Int -> Builder -> Doc
-builder k s = prim $ \_ -> Layout.builder k s
-
--- | Construct a document from a 'Word8'.
-word8 :: Word8 -> Doc
-word8 w = prim $ \_ -> Layout.word8 w
-
--- | Construct a document from a 'B.ByteString'.
-byteString :: B.ByteString -> Doc
-byteString s = prim $ \_ -> Layout.byteString s
-
--- | Create a newline an indent.
-feed :: RenderOptions -> Layout
-feed r = Layout.byteString (newline r)
-      <> Layout.break 0
-      <> Layout.byteString (indent r)
-
--- | A space character.
-space :: Doc
-space = word8 32
-
--- | A newline or space.
-line :: Doc
-line = options $ \r -> prim (\h -> if h then Layout.word8 32 else feed r)
-
--- | A newline or 'mempty'.
-linebreak :: Doc
-linebreak = options $ \r -> prim (\h -> if h then mempty else feed r)
-
--- | A space if the resulting output fits on the page, and a newline otherwise.
-softline :: Doc
-softline = group line
-
--- | 'mempty' if the resulting output fits on the page, and a newline otherwise.
-softbreak :: Doc
-softbreak = group linebreak
-
--- | A newline.
-hardbreak :: Doc
-hardbreak = options $ \r -> prim (\_ -> feed r)
-
--- | Concatenate with a 'space' in between.
-(<+>) :: Doc -> Doc -> Doc
-x <+> y = x <> space <> y
-
--- | Concatenate with a 'line' in between.
-above :: Doc -> Doc -> Doc
-above x y = x <> line <> y
-
--- | Concatenate with a 'softline' in between.
-(</>) :: Doc -> Doc -> Doc
-x </> y = x <> softline <> y
-
--- | Concatenate with a 'linebreak' in between.
-aboveBreak :: Doc -> Doc -> Doc
-aboveBreak x y = x <> linebreak <> y
-
--- | Concatenate with a 'softbreak' in between.
-(<//>) :: Doc -> Doc -> Doc
-x <//> y = x <> softbreak <> y
-
--- | Concatenate with an operator for a non-empty list.
-fold :: Monoid a => (a -> a -> a) -> [a] -> a
-fold _ [] = mempty
-fold f xs = foldr1 f xs
-
--- | Concatenate horizontally with @(\<+\>)@.
-hsep :: [Doc] -> Doc
-hsep = fold (<+>)
-
--- | Concatenate vertically with 'above'.
-vsep :: [Doc] -> Doc
-vsep = fold above
-
--- | Concatenate with either @(\<+\>)@ or 'linebreak's.
-sep :: [Doc] -> Doc
-sep = group . vsep
-
--- | @punctuate p xs@ appends @p@ to all except the last document of @xs@.
-punctuate :: Doc -> [Doc] -> [Doc]
-punctuate p = go
-  where
-    go []     = []
-    go [x]    = [x]
-    go (x:xs) = (x <> p) : go xs
-
--- | Concatenates with @(\</\>)@ as long as its fits the page, than
--- inserts a @line@ and continues doing that for all documents in
--- @xs@.
-fillSep :: [Doc] -> Doc
-fillSep = fold (</>)
-
--- | Rendering options.
-data RenderOptions = RenderOptions
-    { lineWidth :: Int
-    , newline   :: B.ByteString
-    , indent    :: B.ByteString
-    }
-
--- | Default rendering options.
-defaultRenderOptions :: RenderOptions
-defaultRenderOptions = RenderOptions
-    { lineWidth = 80
-    , newline   = "\r\n"
-    , indent    = " "
-    }
-
--- | Render a document to a 'Builder'.
-render :: RenderOptions -> Doc -> Builder
-render r doc = Layout.render (go [doc]) 0
+-- | Render a document with the given line width.
+render :: Monoid a => Int -> Doc a -> Layout a
+render w doc = go [doc]
   where
     go []     = mempty
     go (d:ds) = case d of
         Empty     -> go ds
         Prim h f  -> f h <> go ds
         Cat x y   -> go (x:y:ds)
-        Union x y -> Layout.nicest width (go (x:ds)) (go (y:ds))
-        Options f -> go (f r : ds)
-
-    width = lineWidth r
+        Union x y -> nicest w (go (x:ds)) (go (y:ds))

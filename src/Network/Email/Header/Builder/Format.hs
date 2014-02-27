@@ -36,6 +36,15 @@ import           Network.Email.Types
 int :: Int -> Doc
 int = fromString . show
 
+-- | @punctuate p xs@ appends @p@ to every element of @xs@ but the last.
+punctuate :: Monoid a => a -> [a] -> [a]
+punctuate p = go
+  where
+    go []     = []
+    go [x]    = [x]
+    go (x:xs) = x <> p : xs
+
+-- | Separate a group with commas.
 commaSep :: (a -> Doc) -> [a] -> Doc
 commaSep f = sep . punctuate "," . map f
 
@@ -63,7 +72,7 @@ mailboxList = commaSep mailbox
 
 -- | Format a 'Recipient'.
 recipient :: Recipient -> Doc
-recipient (Individual m ) = mailbox m
+recipient (Individual m)  = mailbox m
 recipient (Group name ms) = phrase name <> ":" </> mailboxList ms
 
 -- | Format a list of 'Recipient'es.
