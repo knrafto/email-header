@@ -38,6 +38,9 @@ import           Network.Email.Types
 infixr 6 </>
 
 data RenderOptions = RenderOptions
+    { lineWidth :: Int
+    , indent    :: Int
+    } deriving (Eq, Read, Show)
 
 -- | A header builder.
 newtype Builder = Builder { runBuilder :: RenderOptions -> Doc B.Builder }
@@ -61,17 +64,24 @@ byteString s = builder (B.length s) (B.byteString s)
 group :: Builder -> Builder
 group a = Builder $ \r -> F.group (runBuilder a r)
 
--- | Get the rendering options.
-options :: (RenderOptions -> Builder) -> Builder
-options f = Builder $ \r -> runBuilder (f r) r
+-- | A space layout.
+space :: Layout B.Builder
+space = F.span 1 (B.char8 ' ')
+
+-- | A newline layout.
+newline :: RenderOptions -> Layout B.Builder
+newline r =
+    F.span 2 (B.byteString "\r\n") <>
+    F.break 0 <>
+    mconcat (replicate (indent r) space)
 
 -- | A line break. If undone, behaves like a space.
 line :: Builder
-line = undefined
+line = Builder $ \r -> F.prim $ \h -> if h then space else newline r
 
 -- | A line break. If undone, behaves like `mempty`.
 linebreak :: Builder
-linebreak = undefined
+linebreak = Builder $ \r -> F.prim $ \h -> if h then mempty else newline r
 
 -- | A line break or a space.
 softline :: Builder
