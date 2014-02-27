@@ -36,13 +36,13 @@ layout l p = snd (runLayout l (\_ -> (const True, mempty)) p)
 -- | Layout a an element of a given length.
 span :: Monoid a => Int -> a -> Layout a
 span k s = Layout $ \c p ->
-    let (fits, b) = c (p + k)
+    let ~(fits, b) = c (p + k)
     in  (\w -> p <= w && fits w, s <> b)
 
 -- | Layout a new line and set the initial position.
 break :: Int -> Layout a
 break i = Layout $ \c p ->
-    let (_, b) = c i
+    let ~(_, b) = c i
     in  (\w -> p <= w, b)
 
 -- | Use the current line position to produce a layout.
