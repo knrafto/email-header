@@ -23,11 +23,13 @@ module Network.Email.Header.Builder.Format
 
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Lazy.Builder as B
+import qualified Data.ByteString.Lazy         as LB
 import           Data.List                    (intersperse)
 import           Data.Monoid
 import           Data.String
 import           Data.Time
 import qualified Data.Text.Lazy               as L
+import qualified Data.Text.Lazy.Encoding      as L
 import           Data.Time.LocalTime
 import           System.Locale
 
@@ -59,6 +61,10 @@ builder k s = Builder $ \_ -> F.prim $ \_ -> F.span k s
 -- | Construct a 'Builder' from a 'B.ByteString'.
 byteString :: B.ByteString -> Builder
 byteString s = builder (B.length s) (B.byteString s)
+
+-- | Construct a 'Builder' from a 'L.Text'.
+text :: L.Text -> Builder
+text = byteString . LB.toStrict . L.encodeUtf8
 
 -- | Group 'Builder's.
 group :: Builder -> Builder
@@ -154,17 +160,41 @@ messageID (MessageID s) = byteString s
 messageIDList :: [MessageID] -> Builder
 messageIDList = commaSep messageID
 
--- | Format a phrase.
+-- | Encode text as an encoded word.
+encodeText :: L.Text -> Builder
+encodeText = undefined
+
+-- | Encode text, given a predicate that checks for illegal characters.
+renderText :: (Char -> Bool) -> L.Text -> Builder
+renderText isIllegalChar t
+    | mustEncode = encodeText t
+    | otherwise  = sep (map text ws)
+  where
+    ws         = L.words t
+
+    mustEncode = L.unwords ws /= t
+              || any ("=?" `L.isPrefixOf`) ws
+              || L.any isIllegalChar t
+
+-- | Format a phrase. The text is encoded as is, unless:
+-- * The text opens or closes with whitespace, or more than one space appears in
+--   between words
+-- * Any word begins with =?
+-- * Any word contains illegal characters
 phrase :: L.Text -> Builder
-phrase = undefined
+phrase = renderText (\c -> c > '~' || c < '!' || c `elem` "()<>[]:;@\\\",")
 
 -- | Format a list of phrases.
 phraseList :: [L.Text] -> Builder
 phraseList = commaSep phrase
 
--- | Format unstructured text.
+-- | Format unstructured text. The text is encoded as is, unless:
+-- * The text opens or closes with whitespace, or more than one space appears in
+--   between words
+-- * Any word begins with =?
+-- * Any word contains illegal characters
 unstructured :: L.Text -> Builder
-unstructured = undefined
+unstructured = renderText (\c -> c > '~' || c < '!')
 
 -- | Format the MIME version.
 mimeVersion ::  Int -> Int -> Builder
