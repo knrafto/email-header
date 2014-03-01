@@ -1,8 +1,12 @@
 -- | Charset conversions.
 module Network.Email.Charset
-    ( encode
-    , decode
+    ( Converter
+    , lookup
+    , fromUnicode
+    , toUnicode
     ) where
+
+import           Prelude               hiding (lookup)
 
 import qualified Data.ByteString       as B
 import           Data.Map.Lazy         (Map)
@@ -29,18 +33,6 @@ charsets = Map.fromList $
 load :: String -> Converter
 load name = unsafePerformIO $ open name (Just True)
 
--- | Use an ICU converter.
-convertWith :: (Converter -> a -> b) -> String -> a -> Maybe b
-convertWith f name a = do
-    converter <- Map.lookup (Charset name) charsets
-    return (f converter a)
-
--- | Encode Unicode text using a charset, or return 'Nothing' if the charset
--- does not exist.
-encode :: String -> T.Text -> Maybe B.ByteString
-encode = convertWith fromUnicode
-
--- | Decode Unicode text using a charset, or return 'Nothing' if the charset
--- does not exist.
-decode :: String -> B.ByteString -> Maybe T.Text
-decode = convertWith toUnicode
+-- | Lookup an ICU converter.
+lookup :: String -> Maybe Converter
+lookup name = Map.lookup (Charset name) charsets
