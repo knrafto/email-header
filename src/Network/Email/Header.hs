@@ -44,7 +44,7 @@ import           Data.Time.LocalTime
 import qualified Network.Email.Header.Parse as P
 import           Network.Email.Types
 
--- | Lookup and parseField a header with a parseFieldr.
+-- | Lookup and parse a header with a parser.
 parseField :: HeaderName -> Parser a -> Headers -> Maybe a
 parseField k p hs = do
     field <- lookup k hs
