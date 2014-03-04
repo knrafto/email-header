@@ -1,12 +1,12 @@
-name:                email
-version:             0.1.0.0
-synopsis:            Parsing of email and MIME messages
-description:         Parsing of email and MIME messages
+name:                email-header
+version:             0.1.0
+synopsis:            Parsing and rendering of email and MIME headers
+description:         Parsing and rendering of email and MIME headers
 license:             BSD3
 license-file:        LICENSE
 author:              Kyle Raftogianis <kylerafto@gmail.com>
 maintainer:          Kyle Raftogianis <kylerafto@gmail.com>
-copyright:           (c) 2013 Kyle Raftogianis
+copyright:           (c) 2014 Kyle Raftogianis
 category:            Network
 build-type:          Simple
 cabal-version:       >= 1.8
@@ -15,17 +15,17 @@ library
   hs-source-dirs: src
 
   build-depends:
+    attoparsec,
     base,
+    base64-bytestring,
+    bytestring,
+    case-insensitive,
     containers,
     mtl,
-    time,
-    bytestring,
     old-locale,
     text,
     text-icu,
-    case-insensitive,
-    attoparsec,
-    base64-bytestring
+    time
 
   exposed-modules:
     Network.Email.Charset
@@ -39,7 +39,7 @@ library
     Network.Email.Header.Render.Internal
     Network.Email.Header.Render.Layout
 
-  ghc-options: -Wall -O2
+  ghc-options: -Wall
 
 test-suite tests
   type: exitcode-stdio-1.0
@@ -52,12 +52,10 @@ test-suite tests
     base,
     bytestring,
     email,
-    HUnit,
     mtl,
     old-locale,
     QuickCheck,
     quickcheck-instances,
     tasty,
-    tasty-hunit,
     tasty-quickcheck,
     time
