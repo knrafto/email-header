@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- | Parsing of common header fields.
 module Network.Email.Header
     ( -- * Origination date field
@@ -64,7 +64,7 @@ sender = parseField "Sender" P.mailbox
 
 -- | Get the value of the @Reply-To:@ field.
 replyTo :: Headers -> Maybe [Recipient]
-replyTo = parseField "" P.recipientList
+replyTo = parseField "Reply-To" P.recipientList
 
 -- | Get the value of the @To:@ field.
 to :: Headers -> Maybe [Recipient]
@@ -124,7 +124,7 @@ resentCc = parseField "Resent-Cc" P.recipientList
 
 -- | Get the value of the @Resent-Bcc:@ field.
 resentBcc :: Headers -> Maybe (Maybe [Recipient])
-resentBcc = parseField "" (optional P.recipientList)
+resentBcc = parseField "Resent-Bcc" (optional P.recipientList)
 
 -- | Get the value of the @Resent-Message-ID:@ field.
 resentMessageID :: Headers -> Maybe MessageID
@@ -136,7 +136,7 @@ mimeVersion = parseField "MIME-Version" P.mimeVersion
 
 -- | Get the value of the @Content-Type:@ field.
 contentType :: Headers -> Maybe (MimeType, Parameters)
-contentType = parseField "Content-Type:" P.contentType
+contentType = parseField "Content-Type" P.contentType
 
 -- | Get the value of the @Content-Transfer-Encoding:@ field.
 contentTransferEncoding :: Headers -> Maybe B.ByteString
