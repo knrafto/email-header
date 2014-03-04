@@ -2,6 +2,7 @@
 module Network.Email.Charset
     ( Converter
     , getName
+    , defaultConverter
     , lookup
     , fromUnicode
     , toUnicode
@@ -9,10 +10,8 @@ module Network.Email.Charset
 
 import           Prelude               hiding (lookup)
 
-import qualified Data.ByteString       as B
 import           Data.Map.Lazy         (Map)
 import qualified Data.Map.Lazy         as Map
-import qualified Data.Text             as T
 import           Data.Text.ICU.Convert
 import           System.IO.Unsafe
 
@@ -33,6 +32,10 @@ charsets = Map.fromList $
 -- | Load an ICU converter.
 load :: String -> Converter
 load name = unsafePerformIO $ open name (Just True)
+
+-- | Load the default converter.
+defaultConverter :: Converter
+defaultConverter = load ""
 
 -- | Lookup an ICU converter.
 lookup :: String -> Maybe Converter
