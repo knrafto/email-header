@@ -1,7 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Network.Email.Header.Builder.Format
-    ( -- * Date and time
-      dateTime
+    ( -- * Rendering
+      RenderOptions(..)
+    , Encoding(..)
+    , Builder
+    , render
+      -- * Combinators
+    , sep
+    , punctuate
+    , commaSep
+    , optional
+      -- * Date and time
+    , dateTime
       -- * Addresses
     , address
     , mailbox
@@ -45,15 +55,15 @@ import           Network.Email.Types
 
 infixr 6 </>
 
-data Encoding = QEncoding | Base64
-    deriving (Eq, Ord, Read, Show, Enum, Bounded)
-
 data RenderOptions = RenderOptions
     { lineWidth :: Int
     , indent    :: Int
     , converter :: Converter
     , encoding  :: Encoding
     } deriving (Eq)
+
+data Encoding = QEncoding | Base64
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
 -- | A header builder.
 newtype Builder = Builder { runBuilder :: RenderOptions -> Doc B.Builder }
@@ -64,6 +74,10 @@ instance Monoid Builder where
 
 instance IsString Builder where
     fromString s = builder (length s) (B.string8 s)
+
+-- | Render a 'Builder'.
+render :: RenderOptions -> Builder -> Layout B.Builder
+render r = F.render (lineWidth r) . flip runBuilder r
 
 -- | Construct a 'Builder' from a 'B.Builder'.
 builder :: Int -> B.Builder -> Builder
@@ -131,6 +145,10 @@ punctuate p = go
 -- | Separate a group with commas.
 commaSep :: (a -> Builder) -> [a] -> Builder
 commaSep f = sep . punctuate "," . map f
+
+-- | Builder a 'Maybe' value.
+optional :: (a -> Builder) -> Maybe a -> Builder
+optional = maybe mempty
 
 -- | Format a date and time.
 dateTime :: ZonedTime -> Builder
