@@ -23,7 +23,7 @@ instance Monoid (Layout a) where
 
 -- | Run a layout with an initial position to produce a rendered 'Builder'.
 layout :: Monoid a => Int -> Layout a -> a
-layout p l = snd $ runLayout l (\_ -> (const True, mempty)) p
+layout p l = snd $ runLayout l (const (const True, mempty)) p
 
 -- | Layout an element of a given length.
 span :: Monoid a => Int -> a -> Layout a

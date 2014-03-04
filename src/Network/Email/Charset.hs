@@ -10,6 +10,7 @@ module Network.Email.Charset
 
 import           Prelude               hiding (lookup)
 
+import           Control.Arrow
 import           Data.Map.Lazy         (Map)
 import qualified Data.Map.Lazy         as Map
 import           Data.Text.ICU.Convert
@@ -27,7 +28,7 @@ instance Ord Charset where
 -- | All charsets.
 charsets :: Map Charset Converter
 charsets = Map.fromList $
-    map (\name -> (Charset name, load name)) converterNames
+    map (Charset &&& load) converterNames
 
 -- | Load an ICU converter.
 load :: String -> Converter

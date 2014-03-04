@@ -114,7 +114,7 @@ flatten (Union x _) = x
 
 -- | Specify an alternative layout with all line breaks flattened.
 group :: Doc -> Doc
-group x = union (flatten x) x
+group x = flatten x `union` x
 
 -- | Construct a 'Doc' from a 'B.Builder'.
 builder :: Int -> Builder -> Doc
