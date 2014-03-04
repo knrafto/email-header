@@ -112,7 +112,7 @@ references = buildField "References" (commaSep R.messageID)
 subject :: L.Text -> (HeaderName, Doc)
 subject = buildField "Subject" R.unstructured
 
--- | Create a @comments:@ field.
+-- | Create a @Comments:@ field.
 comments :: L.Text -> (HeaderName, Doc)
 comments = buildField "Comments" R.unstructured
 

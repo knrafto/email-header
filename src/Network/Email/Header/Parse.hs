@@ -94,7 +94,7 @@ references = parseField "References" (many1 P.messageID)
 subject :: Headers -> Maybe L.Text
 subject = parseField "Subject" P.unstructured
 
--- | Get the value of the @comments:@ field.
+-- | Get the value of the @Comments:@ field.
 comments :: Headers -> Maybe L.Text
 comments = parseField "Comments" P.unstructured
 
