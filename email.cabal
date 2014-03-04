@@ -31,10 +31,10 @@ library
     Network.Email.Charset
     Network.Email.Layout
     Network.Email.Header
-    Network.Email.Header.Builder
-    Network.Email.Header.Builder.Format
+    Network.Email.Header.Render
+    Network.Email.Header.Render.Doc
+    Network.Email.Header.Render.Format
     Network.Email.Header.Parse
-    Network.Email.Format
     Network.Email.Types
 
   ghc-options: -Wall -O2
