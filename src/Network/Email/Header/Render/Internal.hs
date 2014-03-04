@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Docs for header fields.
-module Network.Email.Header.Render.Format
+module Network.Email.Header.Render.Internal
     ( -- * Date and time
       dateTime
       -- * Addresses
@@ -23,24 +23,24 @@ module Network.Email.Header.Render.Format
     ) where
 
 import           Control.Monad
-import qualified Data.ByteString                 as B
-import qualified Data.ByteString.Base64          as Base64
-import           Data.ByteString.Lazy.Builder    (Builder)
-import qualified Data.ByteString.Lazy.Builder    as B
+import qualified Data.ByteString                    as B
+import qualified Data.ByteString.Base64             as Base64
+import           Data.ByteString.Lazy.Builder       (Builder)
+import qualified Data.ByteString.Lazy.Builder       as B
 import           Data.Char
-import qualified Data.Map                        as Map
+import qualified Data.Map                           as Map
 import           Data.Maybe
 import           Data.Monoid
 import           Data.String
 import           Data.Time
-import qualified Data.Text.Lazy                  as L
+import qualified Data.Text.Lazy                     as L
 import           Data.Word
 import           System.Locale
 
 import           Network.Email.Charset
 import           Network.Email.Header.Render.Doc
-import           Network.Email.Layout            as F
-import           Network.Email.Types
+import           Network.Email.Header.Render.Layout as F
+import           Network.Email.Header.Types
 
 -- | Format a date and time.
 dateTime :: ZonedTime -> Doc

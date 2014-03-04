@@ -29,13 +29,15 @@ library
 
   exposed-modules:
     Network.Email.Charset
-    Network.Email.Layout
-    Network.Email.Header
-    Network.Email.Header.Render
-    Network.Email.Header.Render.Doc
-    Network.Email.Header.Render.Format
     Network.Email.Header.Parse
-    Network.Email.Types
+    Network.Email.Header.Render
+    Network.Email.Header.Types
+
+  other-modules:
+    Network.Email.Header.Parse.Internal
+    Network.Email.Header.Render.Doc
+    Network.Email.Header.Render.Internal
+    Network.Email.Header.Render.Layout
 
   ghc-options: -Wall -O2
 

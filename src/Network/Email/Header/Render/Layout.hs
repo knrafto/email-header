@@ -1,5 +1,5 @@
 -- | A layout that keeps track of line positions.
-module Network.Email.Layout
+module Network.Email.Header.Render.Layout
     ( Layout
     , layout
     , span

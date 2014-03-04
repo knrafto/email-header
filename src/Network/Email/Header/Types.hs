@@ -1,5 +1,5 @@
--- | Email types, renamed slightly from RFC 8322.
-module Network.Email.Types
+-- | Email header types, renamed slightly from RFC 8322.
+module Network.Email.Header.Types
     ( Headers
     , HeaderName
     , HeaderField

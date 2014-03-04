@@ -29,19 +29,19 @@ module Network.Email.Header.Render.Doc
     , optional
     ) where
 
-import qualified Data.ByteString              as B
-import           Data.ByteString.Lazy.Builder (Builder)
-import qualified Data.ByteString.Lazy.Builder as B
-import qualified Data.ByteString.Lazy         as LB
-import           Data.List                    (intersperse)
+import qualified Data.ByteString                    as B
+import           Data.ByteString.Lazy.Builder       (Builder)
+import qualified Data.ByteString.Lazy.Builder       as B
+import qualified Data.ByteString.Lazy               as LB
+import           Data.List                          (intersperse)
 import           Data.Monoid
 import           Data.String
-import qualified Data.Text.Lazy               as L
-import qualified Data.Text.Lazy.Encoding      as L
+import qualified Data.Text.Lazy                     as L
+import qualified Data.Text.Lazy.Encoding            as L
 
 import           Network.Email.Charset
-import           Network.Email.Layout         (Layout)
-import qualified Network.Email.Layout         as F
+import           Network.Email.Header.Render.Layout (Layout)
+import qualified Network.Email.Header.Render.Layout as F
 
 infixr 6 </>
 
