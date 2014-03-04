@@ -21,16 +21,20 @@ module Network.Email.Header.Builder.Format
     , contentTransferEncoding
     ) where
 
+import           Control.Monad
 import qualified Data.ByteString              as B
+import qualified Data.ByteString.Base64       as Base64
 import qualified Data.ByteString.Lazy.Builder as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.List                    (intersperse)
+import           Data.Maybe
 import           Data.Monoid
 import           Data.String
 import           Data.Time
 import qualified Data.Text.Lazy               as L
 import qualified Data.Text.Lazy.Encoding      as L
 import           Data.Time.LocalTime
+import           Data.Word
 import           System.Locale
 
 import           Network.Email.Format         (Layout, Doc)
@@ -162,7 +166,56 @@ messageIDList = commaSep messageID
 
 -- | Encode text as an encoded word.
 encodeText :: L.Text -> Builder
-encodeText = undefined
+encodeText t = Builder $ \r -> F.prim $ \h -> layoutText r h t
+
+-- | Layout text as an encoded word.
+layoutText :: RenderOptions -> Bool -> L.Text -> Layout B.Builder
+layoutText r h t = undefined
+
+-- | Convert a word to a hexadecimal value.
+hex :: Word8 -> B.Builder
+hex w = toHexDigit a <> toHexDigit b
+  where
+    (a, b)          = w `divMod` 16
+    toHexDigit w
+        | w < 10    = B.word8 (w + 48)
+        | otherwise = B.word8 (w + 55)
+
+-- | Q-encode a word.
+encodeQ :: Word8 -> (Int, B.Builder)
+encodeQ w
+    | w == 32   = (1, B.char8 '_')
+    | isIllegal = (3, B.char8 '=' <> hex w)
+    | otherwise = (1, B.word8 w)
+  where
+    isIllegal = w < 33 || w > 126 || w `B.elem` "()<>[]:;@\\\",?=_"
+
+-- | Render a Q-encoded text.
+renderQ :: B.ByteString -> Layout B.Builder
+renderQ = B.foldr (\w l -> uncurry F.span (encodeQ w) <> l) mempty
+
+-- | Split off Q-encoded text of a maximum length.
+splitQ :: Int -> B.ByteString -> (Layout B.Builder, B.ByteString)
+splitQ w b = fromMaybe (mempty, b) $ do
+    (a, b') <- B.uncons b
+    let (n, e)   = encodeQ a
+        w'       = w - n
+        (l, b'') = splitQ w' b'
+    guard (w' >= 0)
+    return (F.span n e <> l, b'')
+
+-- | Render a base 64-encoded text.
+renderBase64 :: B.ByteString -> Layout B.Builder
+renderBase64 b = F.span (B.length e) (B.byteString e)
+  where
+    e = Base64.encode b
+
+-- | Split off base 64-encoded text of a maximum length.
+splitBase64 :: Int -> B.ByteString -> (Layout B.Builder, B.ByteString)
+splitBase64 w b = (F.span (B.length e) (B.byteString e), B.drop n b)
+  where
+    n = 3*(w `div` 4)
+    e = Base64.encode (B.take n b)
 
 -- | Encode text, given a predicate that checks for illegal characters.
 renderText :: (Char -> Bool) -> L.Text -> Builder
