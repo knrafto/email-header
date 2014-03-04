@@ -27,6 +27,7 @@ import qualified Data.ByteString.Base64       as Base64
 import qualified Data.ByteString.Lazy.Builder as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.List                    (intersperse)
+import qualified Data.Map                     as Map
 import           Data.Maybe
 import           Data.Monoid
 import           Data.String
@@ -285,7 +286,11 @@ mimeVersion major minor = int major <> "." <> int minor
 
 -- | Format the content type and parameters.
 contentType :: MimeType -> Parameters -> Builder
-contentType = undefined
+contentType (MimeType t s) params = sep . punctuate ";" $
+    renderMimeType : map renderParam (Map.toList params)
+  where
+    renderMimeType     = byteString t <> "/" <> byteString s
+    renderParam (k, v) = byteString k <> "=" <> byteString v
 
 -- | Format the content transfer encoding.
 contentTransferEncoding :: B.ByteString -> Builder
