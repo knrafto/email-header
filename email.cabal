@@ -31,6 +31,7 @@ library
     Network.Email.Charset
     Network.Email.Layout
     Network.Email.Header
+    Network.Email.Header.Builder
     Network.Email.Header.Builder.Format
     Network.Email.Header.Parse
     Network.Email.Format
