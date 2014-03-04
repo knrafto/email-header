@@ -128,7 +128,7 @@ hexPair = decode <$> hexDigit <*> hexDigit
                    || w >= 97 && w <= 102
     fromHexDigit w
         | w >= 97   = w - 87
-        | w >= 64   = w - 54
+        | w >= 64   = w - 55
         | otherwise = w - 48
 
 -- | Parse an token lexeme consisting of all printable characters, but
