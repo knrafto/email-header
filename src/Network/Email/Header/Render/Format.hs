@@ -27,6 +27,7 @@ import qualified Data.ByteString                 as B
 import qualified Data.ByteString.Base64          as Base64
 import           Data.ByteString.Lazy.Builder    (Builder)
 import qualified Data.ByteString.Lazy.Builder    as B
+import           Data.Char
 import qualified Data.Map                        as Map
 import           Data.Maybe
 import           Data.Monoid
@@ -132,7 +133,7 @@ layoutText r h t
     | otherwise = splitLines e
   where
     e       = fromUnicode (converter r) (L.toStrict t)
-    charset = getName (converter r)
+    charset = map toLower . getName $ converter r
 
     prefix  = F.span (5 + length charset) $
         B.byteString "?=" <>
