@@ -37,16 +37,22 @@ import           Data.Time.LocalTime
 import           Data.Word
 import           System.Locale
 
+import           Network.Email.Charset
 import           Network.Email.Format         (Layout, Doc)
 import qualified Network.Email.Format         as F
 import           Network.Email.Types
 
 infixr 6 </>
 
+data Encoding = QEncoding | Base64
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
+
 data RenderOptions = RenderOptions
     { lineWidth :: Int
     , indent    :: Int
-    } deriving (Eq, Read, Show)
+    , converter :: Converter
+    , encoding  :: Encoding
+    } deriving (Eq)
 
 -- | A header builder.
 newtype Builder = Builder { runBuilder :: RenderOptions -> Doc B.Builder }
@@ -164,14 +170,6 @@ messageID (MessageID s) = byteString s
 messageIDList :: [MessageID] -> Builder
 messageIDList = commaSep messageID
 
--- | Encode text as an encoded word.
-encodeText :: L.Text -> Builder
-encodeText t = Builder $ \r -> F.prim $ \h -> layoutText r h t
-
--- | Layout text as an encoded word.
-layoutText :: RenderOptions -> Bool -> L.Text -> Layout B.Builder
-layoutText r h t = undefined
-
 -- | Convert a word to a hexadecimal value.
 hex :: Word8 -> B.Builder
 hex w = toHexDigit a <> toHexDigit b
@@ -216,6 +214,38 @@ splitBase64 w b = (F.span (B.length e) (B.byteString e), B.drop n b)
   where
     n = 3*(w `div` 4)
     e = Base64.encode (B.take n b)
+
+-- | Layout text as an encoded word.
+layoutText :: RenderOptions -> Bool -> L.Text -> Layout B.Builder
+layoutText r h t
+    | h         = prefix <> render e <> postfix
+    | otherwise = splitLines e
+  where
+    e       = fromUnicode (converter r) (L.toStrict t)
+    charset = getName (converter r)
+
+    prefix  = F.span (5 + length charset) $
+        B.byteString "?=" <>
+        B.string8 charset <>
+        B.char8 '?' <>
+        B.byteString enc <>
+        B.char8 '?'
+
+    postfix = F.span 2 (B.byteString "?=")
+
+    (enc, render, split) = case encoding r of
+        QEncoding -> ("Q", renderQ, splitQ)
+        Base64    -> ("B", renderBase64, splitBase64)
+
+    splitLines b
+        | B.null b  = mempty
+        | otherwise = F.position $ \p ->
+            let (l, b') = split (lineWidth r - p) b
+            in  prefix <> l <> postfix <> newline r <> splitLines b'
+
+-- | Encode text as an encoded word.
+encodeText :: L.Text -> Builder
+encodeText t = Builder $ \r -> F.prim $ \h -> layoutText r h t
 
 -- | Encode text, given a predicate that checks for illegal characters.
 renderText :: (Char -> Bool) -> L.Text -> Builder

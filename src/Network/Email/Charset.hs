@@ -1,6 +1,7 @@
 -- | Charset conversions.
 module Network.Email.Charset
     ( Converter
+    , getName
     , lookup
     , fromUnicode
     , toUnicode
