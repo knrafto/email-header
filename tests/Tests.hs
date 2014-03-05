@@ -3,18 +3,16 @@ module Main
     ( main
     ) where
 
-import Control.Applicative
-import Data.Attoparsec.Lazy
-import Data.ByteString.Lazy.Builder
-import Data.Time.Calendar
-import Data.Time.LocalTime
-import Test.QuickCheck
-import Test.Tasty
-import Test.Tasty.QuickCheck
+import           Control.Applicative
+import           Data.Time.Calendar
+import           Data.Time.LocalTime
+import           Test.QuickCheck
+import           Test.Tasty
+import           Test.Tasty.QuickCheck
 
-import           Network.Email.Format
-import qualified Network.Email.Header.Parse          as P
-import qualified Network.Email.Header.Builder.Format as F
+import qualified Network.Email.Header.Parse   as P
+import qualified Network.Email.Header.Render  as R
+import           Network.Email.Header.Types
 
 instance Eq ZonedTime where
     ZonedTime t1 z1 == ZonedTime t2 z2 = (t1, z1) == (t2, z2)
@@ -34,20 +32,20 @@ instance Arbitrary ZonedTime where
 roundTrip
     :: (Arbitrary a, Eq a, Show a)
     => String
-    -> (a -> Doc)
-    -> Parser a
+    -> (a -> (HeaderName, R.Doc))
+    -> (Headers -> Maybe a)
     -> TestTree
-roundTrip name r p = testProperty name $ \a ->
+roundTrip name renderer parser = testProperty name $ \a ->
     forAll (choose (20, 80)) $ \w ->
-    let opts = defaultRenderOptions { lineWidth = w }
-        s    = toLazyByteString $ render opts (r a)
-    in  case parse p s of
-            Fail _ _ _ -> False
-            Done _ b   -> b == a
+    let opts = R.defaultRenderOptions { R.lineWidth = w }
+        hs   = R.renderHeaders opts [renderer a]
+    in  case parser hs of
+            Nothing -> False
+            Just b  -> b == a
 
 parsers :: TestTree
 parsers = testGroup "parsers"
-    [ roundTrip "date-time" F.dateTime P.dateTime
+    [ roundTrip "date-time" R.date P.date
     ]
 
 main :: IO ()

@@ -13,6 +13,7 @@ cabal-version:       >= 1.8
 
 library
   hs-source-dirs: src
+  ghc-options: -Wall
 
   build-depends:
     attoparsec,
@@ -39,8 +40,6 @@ library
     Network.Email.Header.Render.Internal
     Network.Email.Header.Render.Layout
 
-  ghc-options: -Wall
-
 test-suite tests
   type: exitcode-stdio-1.0
   main-is: Tests.hs
@@ -48,14 +47,9 @@ test-suite tests
   ghc-options: -Wall -threaded
 
   build-depends:
-    attoparsec,
     base,
-    bytestring,
-    email,
-    mtl,
-    old-locale,
+    email-header,
     QuickCheck,
-    quickcheck-instances,
     tasty,
     tasty-quickcheck,
     time
