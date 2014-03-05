@@ -136,7 +136,7 @@ layoutText r h t
     charset = map toLower . getName $ converter r
 
     prefix  = F.span (5 + length charset) $
-        B.byteString "?=" <>
+        B.byteString "=?" <>
         B.string8 charset <>
         B.char8 '?' <>
         B.byteString enc <>
