@@ -129,6 +129,7 @@ splitBase64 w b = (F.span (B.length e) (B.byteString e), B.drop n b)
 -- | Layout text as an encoded word.
 layoutText :: RenderOptions -> Bool -> L.Text -> Layout Builder
 layoutText r h t
+    | B.null e  = mempty
     | h         = prefix <> whole e <> postfix
     | otherwise = splitLines e
   where
@@ -139,20 +140,21 @@ layoutText r h t
         B.byteString "=?" <>
         B.string8 charset <>
         B.char8 '?' <>
-        B.byteString enc <>
+        B.char8 enc <>
         B.char8 '?'
 
     postfix = F.span 2 (B.byteString "?=")
 
     (enc, whole, split) = case encoding r of
-        QEncoding -> ("Q", renderQ, splitQ)
-        Base64    -> ("B", renderBase64, splitBase64)
+        QEncoding -> ('Q', renderQ, splitQ)
+        Base64    -> ('B', renderBase64, splitBase64)
 
-    splitLines b
-        | B.null b  = mempty
-        | otherwise = F.position $ \p ->
+    splitLines b = prefix <> rest
+      where
+        rest = F.position $ \p ->
             let (l, b') = split (lineWidth r - p) b
-            in  prefix <> l <> postfix <> newline r <> splitLines b'
+            in  l <> postfix <>
+                (if B.null b' then mempty else newline r <> splitLines b')
 
 -- | Encode text as an encoded word.
 encodeText :: L.Text -> Doc
