@@ -69,7 +69,7 @@ recipient :: Recipient -> Doc
 recipient (Individual m)  = mailbox m
 recipient (Group name ms) = phrase name <> ":" </> mailboxList ms
 
--- | Format a list of 'Recipient'es.
+-- | Format a list of 'Recipient's.
 recipientList :: [Recipient] -> Doc
 recipientList = commaSep recipient
 
