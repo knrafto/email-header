@@ -52,4 +52,5 @@ test-suite tests
     QuickCheck,
     tasty,
     tasty-quickcheck,
+    text,
     time

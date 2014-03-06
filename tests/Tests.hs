@@ -4,6 +4,7 @@ module Main
     ) where
 
 import           Control.Applicative
+import qualified Data.Text.Lazy               as L
 import           Data.Time.Calendar
 import           Data.Time.LocalTime
 import           Test.QuickCheck
@@ -29,6 +30,9 @@ instance Arbitrary ZonedTime where
 
         zone = minutesToTimeZone <$> choose (-12*60, 14*60)
 
+instance Arbitrary L.Text where
+    arbitrary = L.pack <$> arbitrary
+
 roundTrip
     :: (Arbitrary a, Eq a, Show a)
     => String
@@ -44,8 +48,9 @@ roundTrip name renderer parser = testProperty name $ \a ->
             Just b  -> b == a
 
 parsers :: TestTree
-parsers = testGroup "parsers"
-    [ roundTrip "date-time" R.date P.date
+parsers = testGroup "round trip"
+    [ roundTrip "Date" R.date P.date
+    , roundTrip "Subject" R.subject P.subject
     ]
 
 main :: IO ()
