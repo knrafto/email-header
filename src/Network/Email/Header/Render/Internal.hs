@@ -22,14 +22,13 @@ module Network.Email.Header.Render.Internal
     , contentTransferEncoding
     ) where
 
-import           Control.Monad
+import           Control.Arrow
 import qualified Data.ByteString                    as B
 import qualified Data.ByteString.Base64             as Base64
 import           Data.ByteString.Lazy.Builder       (Builder)
 import qualified Data.ByteString.Lazy.Builder       as B
 import           Data.Char
 import qualified Data.Map                           as Map
-import           Data.Maybe
 import           Data.Monoid
 import           Data.String
 import           Data.Time
@@ -86,75 +85,72 @@ hex :: Word8 -> Builder
 hex w = toHexDigit a <> toHexDigit b
   where
     (a, b)          = w `divMod` 16
-    toHexDigit d
-        | d < 10    = B.word8 (d + 48)
-        | otherwise = B.word8 (d + 55)
+    toHexDigit n
+        | n < 10    = B.word8 (n + 48)
+        | otherwise = B.word8 (n + 55)
 
--- | Q-encode a word.
-encodeQ :: Word8 -> (Int, Builder)
-encodeQ w
-    | w == 32   = (1, B.char8 '_')
-    | isIllegal = (3, B.char8 '=' <> hex w)
-    | otherwise = (1, B.word8 w)
+-- | Encode a word.
+encodeWord :: RenderOptions -> L.Text -> (Int, Builder)
+encodeWord r = encodeWith (encoding r) . fromUnicode (converter r) . L.toStrict
   where
-    isIllegal = w < 33 || w > 126 || w `B.elem` "()<>[]:;@\\\",?=_"
+    encodeWith QEncoding = encodeQ
+    encodeWith Base64    = encodeBase64
 
--- | Render a Q-encoded text.
-renderQ :: B.ByteString -> Layout Builder
-renderQ = B.foldr (\w l -> uncurry F.span (encodeQ w) <> l) mempty
+    encodeQ              = first getSum .
+                           B.foldr (\w a -> encodeWord8 w <> a) mempty
 
--- | Split off Q-encoded text of a maximum length.
-splitQ :: Int -> B.ByteString -> (Layout Builder, B.ByteString)
-splitQ w b = fromMaybe (mempty, b) $ do
-    (a, b') <- B.uncons b
-    let (n, e)   = encodeQ a
-        w'       = w - n
-        (l, b'') = splitQ w' b'
-    guard (w' >= 0)
-    return (F.span n e <> l, b'')
+    encodeWord8 w
+        | w == 32        = (Sum 1, B.char8 '_')
+        | isIllegal w    = (Sum 3, B.char8 '=' <> hex w)
+        | otherwise      = (Sum 1, B.word8 w)
 
--- | Render a base 64-encoded text.
-renderBase64 :: B.ByteString -> Layout Builder
-renderBase64 b = F.span (B.length e) (B.byteString e)
+    isIllegal w          = w < 33
+                        || w > 126
+                        || w `B.elem` "()<>[]:;@\\\",?=_"
+
+    encodeBase64 b       = let e = Base64.encode b
+                           in  (B.length e, B.byteString e)
+
+-- | Split text into a layout that fits the given width and the remainder.
+-- TODO: inefficient
+splitWord :: RenderOptions -> Int -> L.Text -> (Layout Builder, L.Text)
+splitWord r w t =
+    first (uncurry F.span) .
+    last .
+    filter (fits . fst) .
+    map (first (encodeWord r)) $
+    zip (L.inits t) (L.tails t)
   where
-    e = Base64.encode b
-
--- | Split off base 64-encoded text of a maximum length.
-splitBase64 :: Int -> B.ByteString -> (Layout Builder, B.ByteString)
-splitBase64 w b = (F.span (B.length e) (B.byteString e), B.drop n b)
-  where
-    n = 3*(w `div` 4)
-    e = Base64.encode (B.take n b)
+    fits (l, _) = l <= w || l <= 0
 
 -- | Layout text as an encoded word.
 layoutText :: RenderOptions -> Bool -> L.Text -> Layout Builder
-layoutText r h t
-    | B.null e  = mempty
-    | h         = prefix <> whole e <> postfix
-    | otherwise = splitLines e
+layoutText r h t0
+    | L.null t0 = mempty
+    | h         = prefix <> uncurry F.span (encodeWord r t0) <> postfix
+    | otherwise = splitLines t0
   where
-    e       = fromUnicode (converter r) (L.toStrict t)
     charset = map toLower . getName $ converter r
+
+    method  = case encoding r of
+        QEncoding -> 'Q'
+        Base64    -> 'B'
 
     prefix  = F.span (5 + length charset) $
         B.byteString "=?" <>
         B.string8 charset <>
         B.char8 '?' <>
-        B.char8 enc <>
+        B.char8 method <>
         B.char8 '?'
 
     postfix = F.span 2 (B.byteString "?=")
 
-    (enc, whole, split) = case encoding r of
-        QEncoding -> ('Q', renderQ, splitQ)
-        Base64    -> ('B', renderBase64, splitBase64)
+    padding = 7 + length charset
 
-    splitLines b = prefix <> rest
-      where
-        rest = F.position $ \p ->
-            let (l, b') = split (lineWidth r - p) b
-            in  l <> postfix <>
-                (if B.null b' then mempty else newline r <> splitLines b')
+    splitLines t = F.position $ \p ->
+        let (l, t') = splitWord r (lineWidth r - padding - p) t
+        in  prefix <> l <> postfix <>
+            (if L.null t' then mempty else newline r <> splitLines t')
 
 -- | Encode text as an encoded word.
 encodeText :: L.Text -> Doc
