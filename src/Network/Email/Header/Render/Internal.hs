@@ -41,6 +41,14 @@ import           Network.Email.Header.Render.Doc
 import           Network.Email.Header.Render.Layout as F
 import           Network.Email.Header.Types
 
+-- | Separate a group with commas.
+commaSep :: (a -> Doc) -> [a] -> Doc
+commaSep f = sep . punctuate "," . map f
+
+-- | Surround a 'Doc' with angle brackets.
+angle :: Doc -> Doc
+angle d = "<" <> d <> ">"
+
 -- | Format a date and time.
 dateTime :: ZonedTime -> Doc
 dateTime = fromString . formatTime defaultTimeLocale rfc822DateFormat
@@ -51,7 +59,7 @@ address (Address s) = byteString s
 
 -- | Format an address with angle brackets.
 angleAddr :: Address -> Doc
-angleAddr a = "<" <> address a <> ">"
+angleAddr = angle . address
 
 -- | Format a 'Mailbox'.
 mailbox :: Mailbox -> Doc
@@ -66,7 +74,7 @@ mailboxList = commaSep mailbox
 -- | Format a 'Recipient'.
 recipient :: Recipient -> Doc
 recipient (Individual m)  = mailbox m
-recipient (Group name ms) = phrase name <> ":" </> mailboxList ms
+recipient (Group name ms) = phrase name <> ":" </> mailboxList ms <> ";"
 
 -- | Format a list of 'Recipient's.
 recipientList :: [Recipient] -> Doc
@@ -74,7 +82,7 @@ recipientList = commaSep recipient
 
 -- | Format a message identifier
 messageID :: MessageID -> Doc
-messageID (MessageID s) = byteString s
+messageID (MessageID s) = angle (byteString s)
 
 -- | Format a list of message identifiers.
 messageIDList :: [MessageID] -> Doc

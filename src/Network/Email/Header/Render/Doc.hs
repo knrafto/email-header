@@ -25,7 +25,6 @@ module Network.Email.Header.Render.Doc
       -- * Combinators
     , sep
     , punctuate
-    , commaSep
     , optional
     ) where
 
@@ -170,10 +169,6 @@ punctuate p = go
     go []     = []
     go [x]    = [x]
     go (x:xs) = x <> p : go xs
-
--- | Separate a group with commas.
-commaSep :: (a -> Doc) -> [a] -> Doc
-commaSep f = sep . punctuate "," . map f
 
 -- | Render a 'Maybe' value.
 optional :: (a -> Doc) -> Maybe a -> Doc
