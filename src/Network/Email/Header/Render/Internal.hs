@@ -111,17 +111,22 @@ encodeWord r = encodeWith (encoding r) . fromUnicode (converter r) . L.toStrict
     encodeBase64 b       = let e = Base64.encode b
                            in  (B.length e, B.byteString e)
 
--- | Split text into a layout that fits the given width and the remainder.
+-- | Split nonempty text into a layout that fits the given width and the
+-- remainder.
 -- TODO: inefficient
 splitWord :: RenderOptions -> Int -> L.Text -> (Layout Builder, L.Text)
 splitWord r w t =
     first (uncurry F.span) .
     last .
-    filter (fits . fst) .
-    map (first (encodeWord r)) $
+    takeWhile1 (fits . fst) .
+    map (first (encodeWord r)) .
+    drop 1 $
     zip (L.inits t) (L.tails t)
   where
-    fits (l, _) = l <= w || l <= 0
+    fits (l, _) = l <= w
+
+    takeWhile1 _ []     = []
+    takeWhile1 p (x:xs) = x : takeWhile p xs
 
 -- | Layout text as an encoded word.
 layoutText :: RenderOptions -> Bool -> L.Text -> Layout Builder
