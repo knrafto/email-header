@@ -102,11 +102,11 @@ messageID = buildField "Message-ID" R.messageID
 
 -- | Create a @In-Reply-To:@ field.
 inReplyTo :: [MessageID] -> (HeaderName, Doc)
-inReplyTo = buildField "In-Reply-To" (commaSep R.messageID)
+inReplyTo = buildField "In-Reply-To" (sep . map R.messageID)
 
 -- | Create a @References:@ field.
 references :: [MessageID] -> (HeaderName, Doc)
-references = buildField "References" (commaSep R.messageID)
+references = buildField "References" (sep . map R.messageID)
 
 -- | Create a @Subject:@ field.
 subject :: L.Text -> (HeaderName, Doc)
