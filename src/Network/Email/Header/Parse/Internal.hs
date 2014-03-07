@@ -44,11 +44,12 @@ import           Data.Monoid
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
 import qualified Data.Text                    as T
-import qualified Data.Text.Lazy               as L (Text, fromChunks)
 import           Data.Text.Encoding
+import           Data.Text.ICU.Convert
+import qualified Data.Text.Lazy               as L (Text, fromChunks)
 import           Data.Word
 
-import qualified Network.Email.Charset        as CS
+import           Network.Email.Charset
 import           Network.Email.Header.Types   hiding (mimeType)
 
 infixl 3 <+>
@@ -173,8 +174,8 @@ encodedWord = do
     enc     <- method
     _       <- A.string "?="
 
-    converter <- parseMaybe "charset not found" $ CS.lookup charset
-    return $ CS.toUnicode converter enc
+    converter <- parseMaybe "charset not found" $ lookupConverter charset
+    return $ toUnicode converter enc
   where
     decodeMethod = quoted       <$ A.satisfy (`B.elem` "Qq")
                <|> base64String <$ A.satisfy (`B.elem` "Bb")

@@ -32,11 +32,11 @@ import qualified Data.Map                           as Map
 import           Data.Monoid
 import           Data.String
 import           Data.Time
+import           Data.Text.ICU.Convert
 import qualified Data.Text.Lazy                     as L
 import           Data.Word
 import           System.Locale
 
-import           Network.Email.Charset
 import           Network.Email.Header.Render.Doc
 import           Network.Email.Header.Render.Layout as F
 import           Network.Email.Header.Types

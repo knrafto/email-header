@@ -1,11 +1,8 @@
 -- | Charset conversions.
 module Network.Email.Charset
     ( Converter
-    , getName
+    , lookupConverter
     , defaultConverter
-    , lookup
-    , fromUnicode
-    , toUnicode
     ) where
 
 import           Prelude               hiding (lookup)
@@ -34,10 +31,10 @@ charsets = Map.fromList $
 load :: String -> Converter
 load name = unsafePerformIO $ open name (Just True)
 
+-- | Lookup an ICU converter.
+lookupConverter :: String -> Maybe Converter
+lookupConverter name = Map.lookup (Charset name) charsets
+
 -- | Load the default converter.
 defaultConverter :: Converter
 defaultConverter = load ""
-
--- | Lookup an ICU converter.
-lookup :: String -> Maybe Converter
-lookup name = Map.lookup (Charset name) charsets
