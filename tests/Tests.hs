@@ -11,6 +11,7 @@ import           Test.QuickCheck
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
+import           Network.Email.Charset
 import qualified Network.Email.Header.Parse   as P
 import qualified Network.Email.Header.Render  as R
 import           Network.Email.Header.Types
@@ -42,6 +43,19 @@ text = L.pack <$> listOf char
 text1 :: Gen L.Text
 text1 = L.pack <$> listOf1 char
 
+instance Arbitrary R.RenderOptions where
+    arbitrary = R.RenderOptions
+        <$> choose (20, 80)
+        <*> choose (1, 8)
+        <*> pure defaultConverter
+        <*> arbitrary
+
+instance Arbitrary Converter where
+    arbitrary = pure defaultConverter  -- TODO
+
+instance Arbitrary R.Encoding where
+    arbitrary = arbitraryBoundedEnum
+
 roundTrip
     :: (Eq a, Show a)
     => String
@@ -50,10 +64,8 @@ roundTrip
     -> (Headers -> Maybe a)
     -> TestTree
 roundTrip name gen renderer parser = testProperty name $
-    forAll gen $ \a ->
-    forAll (choose (20, 80)) $ \w ->
-    let opts = R.defaultRenderOptions { R.lineWidth = w }
-        hs   = R.renderHeaders opts [renderer a]
+    forAll gen $ \a opts ->
+    let hs = R.renderHeaders opts [renderer a]
     in  case parser hs of
             Nothing -> False
             Just b  -> b == a

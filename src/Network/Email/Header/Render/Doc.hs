@@ -51,7 +51,7 @@ data RenderOptions = RenderOptions
     , indent    :: Int
     , converter :: Converter
     , encoding  :: Encoding
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
 -- | Quoted-word encoding.
 data Encoding = QEncoding | Base64
