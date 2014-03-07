@@ -40,6 +40,7 @@ import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy         as L (toStrict)
 import           Data.List
 import qualified Data.Map.Strict              as Map
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
@@ -223,22 +224,19 @@ addrSpec = toByteString <$> (localPart <+> at <+> domain)
 angleAddrSpec :: Parser B.ByteString
 angleAddrSpec = symbol '<' *> addrSpec <* symbol '>'
 
--- | @optionalSepBy p sep@ applies /zero/ or more occurrences of @p@,
--- separated by @sep@. Null entries between separators will be filtered
--- out.
-optionalSepBy :: Alternative f => f a -> f s -> f [a]
-optionalSepBy p sep = step
-  where
-    step = sep *> step
-       <|> (:) <$> p <*> end
-       <|> pure []
+-- | Parse two or more occurences of @p@, separated by @sep@.
+sepBy2 :: Alternative f => f a -> f b -> f [a]
+sepBy2 p sep = (:) <$> p <*> many1 (sep *> p)
 
-    end  = sep *> step
-       <|> pure []
+-- | Parse a list of elements, with possibly null entries in between
+-- separators. At least one entry or separator will be parsed.
+optionalSepBy1 :: Alternative f => f a -> f b -> f [a]
+optionalSepBy1 p sep = catMaybes <$> sepBy2 (optional p) sep
+                   <|> return <$> p
 
 -- | Parse a list of elements, separated by commas.
 commaSep :: Parser a -> Parser [a]
-commaSep p = optionalSepBy p (symbol ',')
+commaSep p = optionalSepBy1 p (symbol ',')
 
 -- | Parse a date and time. Currently, non-numeric timezones (such as \"PDT\")
 -- are considered equivalent to UTC time.
