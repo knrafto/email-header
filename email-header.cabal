@@ -6,10 +6,17 @@ license:             BSD3
 license-file:        LICENSE
 author:              Kyle Raftogianis <kylerafto@gmail.com>
 maintainer:          Kyle Raftogianis <kylerafto@gmail.com>
-copyright:           (c) 2014 Kyle Raftogianis
+stability:           experimental
+homepage:            http://github.com/knrafto/email-header
+bug-reports:         http://github.com/knrafto/email-header/issues
+copyright:           Copyright (c) 2014 Kyle Raftogianis
 category:            Network
 build-type:          Simple
 cabal-version:       >= 1.8
+
+extra-source-files:
+  .gitignore
+  README.md
 
 source-repository head
   type: git
