@@ -175,6 +175,6 @@ punctuate p = go
 commaSep :: (a -> Doc) -> [a] -> Doc
 commaSep f = sep . punctuate "," . map f
 
--- | Builder a 'Maybe' value.
+-- | Render a 'Maybe' value.
 optional :: (a -> Doc) -> Maybe a -> Doc
 optional = maybe mempty

@@ -238,8 +238,9 @@ optionalSepBy1 p sep = catMaybes <$> sepBy2 (optional p) sep
 commaSep :: Parser a -> Parser [a]
 commaSep p = optionalSepBy1 p (symbol ',')
 
--- | Parse a date and time. Currently, non-numeric timezones (such as \"PDT\")
--- are considered equivalent to UTC time.
+-- | Parse a date and time.
+-- TODO: non-numeric timezones (such as \"PDT\") are considered equivalent
+-- to UTC time.
 dateTime :: Parser ZonedTime
 dateTime = do
     wday  <- optional dayOfWeek
