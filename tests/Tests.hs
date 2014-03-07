@@ -31,7 +31,11 @@ instance Arbitrary ZonedTime where
         zone = minutesToTimeZone <$> choose (-12*60, 14*60)
 
 instance Arbitrary L.Text where
-    arbitrary = L.pack <$> arbitrary
+    arbitrary = L.pack <$> listOf1 char
+      where
+        char = frequency [ (9, elements [' ' .. '~'])
+                         , (1, arbitrary)
+                         ]
 
 roundTrip
     :: (Arbitrary a, Eq a, Show a)
@@ -49,8 +53,12 @@ roundTrip name renderer parser = testProperty name $ \a ->
 
 parsers :: TestTree
 parsers = testGroup "round trip"
-    [ roundTrip "Date" R.date P.date
+    [ -- Origination date
+      roundTrip "Date" R.date P.date
+      -- Informational fields
     , roundTrip "Subject" R.subject P.subject
+    , roundTrip "Comments" R.comments P.comments
+    , roundTrip "Keywords" R.keywords P.keywords
     ]
 
 main :: IO ()
