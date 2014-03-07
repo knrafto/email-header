@@ -30,20 +30,27 @@ instance Arbitrary ZonedTime where
 
         zone = minutesToTimeZone <$> choose (-12*60, 14*60)
 
-instance Arbitrary L.Text where
-    arbitrary = L.pack <$> listOf1 char
-      where
-        char = frequency [ (9, elements [' ' .. '~'])
-                         , (1, arbitrary)
-                         ]
+char :: Gen Char
+char = frequency
+    [ (9, elements [' ' .. '~'])
+    , (1, arbitrary)
+    ]
+
+text :: Gen L.Text
+text = L.pack <$> listOf char
+
+text1 :: Gen L.Text
+text1 = L.pack <$> listOf1 char
 
 roundTrip
-    :: (Arbitrary a, Eq a, Show a)
+    :: (Eq a, Show a)
     => String
+    -> Gen a
     -> (a -> (HeaderName, R.Doc))
     -> (Headers -> Maybe a)
     -> TestTree
-roundTrip name renderer parser = testProperty name $ \a ->
+roundTrip name gen renderer parser = testProperty name $
+    forAll gen $ \a ->
     forAll (choose (20, 80)) $ \w ->
     let opts = R.defaultRenderOptions { R.lineWidth = w }
         hs   = R.renderHeaders opts [renderer a]
@@ -54,11 +61,11 @@ roundTrip name renderer parser = testProperty name $ \a ->
 parsers :: TestTree
 parsers = testGroup "round trip"
     [ -- Origination date
-      roundTrip "Date" R.date P.date
+      roundTrip "Date"     arbitrary      R.date     P.date
       -- Informational fields
-    , roundTrip "Subject" R.subject P.subject
-    , roundTrip "Comments" R.comments P.comments
-    , roundTrip "Keywords" R.keywords P.keywords
+    , roundTrip "Subject"  text           R.subject  P.subject
+    , roundTrip "Comments" text           R.comments P.comments
+    , roundTrip "Keywords" (listOf text1) R.keywords P.keywords
     ]
 
 main :: IO ()
