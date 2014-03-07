@@ -34,7 +34,7 @@ newtype Address = Address B.ByteString
 data Mailbox = Mailbox
     { displayName    :: Maybe L.Text
     , mailboxAddress :: Address
-    } deriving (Show)
+    } deriving (Eq, Show)
 
 -- | A 'Recipient' is used to indicate senders and recipients of messages.
 -- It may either be an individual 'Mailbox', or a named group of
@@ -42,7 +42,7 @@ data Mailbox = Mailbox
 data Recipient
     = Individual Mailbox
     | Group L.Text [Mailbox]
-    deriving (Show)
+    deriving (Eq, Show)
 
 -- | A message identifier.
 newtype MessageID = MessageID B.ByteString
