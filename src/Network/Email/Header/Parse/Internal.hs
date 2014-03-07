@@ -2,7 +2,8 @@
 -- | Header parsers.
 module Network.Email.Header.Parse.Internal
     ( -- * Whitespace
-      cfws
+      fws
+    , cfws
       -- * Date and time
     , dateTime
       -- * Addresses
@@ -152,10 +153,6 @@ dotAtom = tokenWith "()<>[]:;@\\\","
 token :: Parser B.ByteString
 token = tokenWith "()<>@,;:\\\"/[]?="
 
--- | A raw, non-space token.
-textToken :: Parser B.ByteString
-textToken = lexeme $ A.takeWhile1 (not . A8.isSpace_w8)
-
 -- | Parse a quoted-string.
 quotedString :: Parser B.ByteString
 quotedString = lexeme $
@@ -167,7 +164,7 @@ quotedString = lexeme $
 
 -- | Parse an encoded word, as per RFC 2047.
 encodedWord :: Parser T.Text
-encodedWord = lexeme $ do
+encodedWord = do
     _       <- A.string "=?"
     charset <- B8.unpack <$> tokenWith "()<>@,;:\"/[]?.="
     _       <- A8.char '?'
@@ -340,7 +337,7 @@ fromElements = L.fromChunks . intersperse (T.singleton ' ')
 phrase :: Parser L.Text
 phrase = fromElements <$> many1 element
   where
-    element = T.concat     <$> many1 encodedWord
+    element = T.concat     <$> many1 (lexeme encodedWord)
           <|> decodeLatin1 <$> quotedString
           <|> decodeLatin1 <$> dotAtom
 
@@ -354,8 +351,10 @@ phraseList = commaSep phrase
 unstructured :: Parser L.Text
 unstructured = fromElements <$> many element
   where
-    element = T.concat     <$> many1 encodedWord
-          <|> decodeLatin1 <$> textToken
+    element = T.concat     <$> many1 (encodedWord <* fws)
+          <|> decodeLatin1 <$> word <* fws
+
+    word    = A.takeWhile1 (not . A8.isSpace_w8)
 
 -- | Parse the MIME version (which should be 1.0).
 mimeVersion :: Parser (Int, Int)

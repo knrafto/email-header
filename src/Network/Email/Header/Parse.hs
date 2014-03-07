@@ -50,6 +50,12 @@ parseField k p hs = do
     field <- lookup k hs
     maybeResult $ parse (P.cfws *> p <* endOfInput) field
 
+-- | Lookup and parse an unstructured header.
+parseUnstructuredField :: HeaderName -> Headers -> Maybe L.Text
+parseUnstructuredField k hs = do
+    field <- lookup k hs
+    maybeResult $ parse (P.fws *> P.unstructured <* endOfInput) field
+
 -- | Get the value of the @Date:@ field.
 date :: Headers -> Maybe ZonedTime
 date = parseField "Date" P.dateTime
@@ -92,11 +98,11 @@ references = parseField "References" (many1 P.messageID)
 
 -- | Get the value of the @Subject:@ field.
 subject :: Headers -> Maybe L.Text
-subject = parseField "Subject" P.unstructured
+subject = parseUnstructuredField "Subject"
 
 -- | Get the value of the @Comments:@ field.
 comments :: Headers -> Maybe L.Text
-comments = parseField "Comments" P.unstructured
+comments = parseUnstructuredField "Comments"
 
 -- | Get the value of the @Keywords:@ field.
 keywords :: Headers -> Maybe [L.Text]
