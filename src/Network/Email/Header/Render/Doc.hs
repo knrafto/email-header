@@ -169,7 +169,7 @@ punctuate p = go
   where
     go []     = []
     go [x]    = [x]
-    go (x:xs) = x <> p : xs
+    go (x:xs) = x <> p : go xs
 
 -- | Separate a group with commas.
 commaSep :: (a -> Doc) -> [a] -> Doc
