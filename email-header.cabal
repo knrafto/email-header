@@ -59,6 +59,7 @@ test-suite tests
 
   build-depends:
     base,
+    bytestring,
     email-header,
     QuickCheck,
     tasty,
