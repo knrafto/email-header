@@ -33,7 +33,6 @@ library
     bytestring,
     case-insensitive,
     containers,
-    mtl,
     old-locale,
     text,
     text-icu,
