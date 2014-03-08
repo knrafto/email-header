@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main
     ( main
@@ -5,6 +6,9 @@ module Main
 
 import           Control.Applicative
 import qualified Data.ByteString.Char8        as B
+import           Data.CaseInsensitive         (CI)
+import qualified Data.CaseInsensitive         as CI
+import qualified Data.Map                     as Map
 import qualified Data.Text.Lazy               as L
 import           Data.Time.Calendar
 import           Data.Time.LocalTime
@@ -47,11 +51,31 @@ text = L.pack <$> listOf char
 phrase :: Gen L.Text
 phrase = L.pack <$> listOf1 char
 
-addrSpec :: Gen B.ByteString
-addrSpec = B.pack . concat <$> sequence [dotAtom, pure "@", dotAtom]  -- TODO
+token :: Gen B.ByteString
+token = resize 20 $ B.pack <$> listOf1 (elements ttext)  -- TODO
   where
-    dotAtom = resize 20 . listOf1 $ elements atext
-    atext   = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "!#$%&'*+-/=?^_`{|}~"
+    ttext = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "!#$%&'*+-^_`{|}~"
+
+tokenCI :: Gen (CI B.ByteString)
+tokenCI = CI.mk <$> token
+
+addrSpec :: Gen B.ByteString
+addrSpec = B.concat <$> sequence [token, pure "@", token]  -- TODO
+
+mimeVersion :: Gen (Int, Int)
+mimeVersion = (,) <$> digit <*> digit
+  where
+    digit = choose (0, 9)
+
+encoding :: Gen (CI B.ByteString)
+encoding = elements
+    ["base64", "quoted-printable", "8bit", "7bit", "binary", "x-token"]
+
+contentType :: Gen (MimeType, Parameters)
+contentType = (,) <$> arbitrary <*> params
+  where
+    params    = Map.fromList <$> listOf param
+    param     = (,) <$> tokenCI <*> token
 
 instance Arbitrary Address where
     arbitrary = Address <$> addrSpec
@@ -65,6 +89,9 @@ instance Arbitrary Recipient where
 
 instance Arbitrary MessageID where
     arbitrary = MessageID <$> addrSpec
+
+instance Arbitrary MimeType where
+    arbitrary = MimeType <$> tokenCI <*> tokenCI
 
 instance Arbitrary R.RenderOptions where
     arbitrary = R.RenderOptions
@@ -117,13 +144,20 @@ parsers = testGroup "round trip"
     , roundTrip "Comments" text             R.comments P.comments
     , roundTrip "Keywords" (listOf1 phrase) R.keywords P.keywords
       -- Resent
-    , roundTrip "Resent-Date"       arbitrary      R.resentDate      P.resentDate
-    , roundTrip "Resent-From"       list1          R.resentFrom      P.resentFrom
-    , roundTrip "Resent-Sender"     arbitrary      R.resentSender    P.resentSender
-    , roundTrip "Resent-To"         list1          R.resentTo        P.resentTo
-    , roundTrip "Resent-Cc"         list1          R.resentCc        P.resentCc
-    , roundTrip "Resent-Bcc"        (option list1) R.resentBcc       P.resentBcc
-    , roundTrip "Resent-Message-ID" arbitrary      R.resentMessageID P.resentMessageID
+    , roundTrip "Resent-Date"   arbitrary      R.resentDate      P.resentDate
+    , roundTrip "Resent-From"   list1          R.resentFrom      P.resentFrom
+    , roundTrip "Resent-Sender" arbitrary      R.resentSender    P.resentSender
+    , roundTrip "Resent-To"     list1          R.resentTo        P.resentTo
+    , roundTrip "Resent-Cc"     list1          R.resentCc        P.resentCc
+    , roundTrip "Resent-Bcc"    (option list1) R.resentBcc       P.resentBcc
+    , roundTrip "Resent-Message-ID" arbitrary
+        R.resentMessageID P.resentMessageID
+      -- MIME
+    , roundTrip "MIME-Version" mimeVersion (uncurry R.mimeVersion) P.mimeVersion
+    , roundTrip "Content-Type" contentType (uncurry R.contentType) P.contentType
+    , roundTrip "Content-Transfer-Encoding" encoding
+        R.contentTransferEncoding P.contentTransferEncoding
+    , roundTrip "Content-ID"   arbitrary   R.contentID             P.contentID
     ]
 
 main :: IO ()

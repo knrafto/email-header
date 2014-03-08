@@ -60,6 +60,8 @@ test-suite tests
   build-depends:
     base,
     bytestring,
+    case-insensitive,
+    containers,
     email-header,
     QuickCheck,
     tasty,
