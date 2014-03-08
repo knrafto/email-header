@@ -355,7 +355,7 @@ phraseList = commaSep phrase
 -- White space is reduced to a single space, except when part of an encoded
 -- word.
 unstructured :: Parser L.Text
-unstructured = fromElements <$> many element
+unstructured = fromElements <$ fws <*> many element <* A.endOfInput
   where
     element = T.concat     <$> many1 (encodedWord <* fws)
           <|> decodeLatin1 <$> word <* fws

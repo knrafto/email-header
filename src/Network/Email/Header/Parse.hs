@@ -2,8 +2,11 @@
 -- | Parsing of common header fields.
 -- This module is intended to be imported qualified.
 module Network.Email.Header.Parse
-    ( -- * Origination date field
-      date
+    ( -- * Parsing
+      field
+    , structuredField
+      -- * Origination date field
+    , date
       -- * Originator fields
     , from
     , sender
@@ -47,110 +50,110 @@ import qualified Network.Email.Header.Parse.Internal as P
 import           Network.Email.Header.Types
 
 -- | Lookup and parse a header with a parser.
-parseField :: HeaderName -> Parser a -> Headers -> Maybe a
-parseField k p hs = do
-    field <- lookup k hs
-    maybeResult $ parse (P.cfws *> p <* endOfInput) field
+field :: HeaderName -> Parser a -> Headers -> Maybe a
+field k p hs = do
+    body <- lookup k hs
+    maybeResult $ parse p body
 
--- | Lookup and parse an unstructured header.
-parseUnstructuredField :: HeaderName -> Headers -> Maybe L.Text
-parseUnstructuredField k hs = do
-    field <- lookup k hs
-    maybeResult $ parse (P.fws *> P.unstructured <* endOfInput) field
+-- | Lookup and parse a structured header with a parser. This skips initial
+-- comments and folding white space, and ensures that the entire body is
+-- consumed by the parser.
+structuredField :: HeaderName -> Parser a -> Headers -> Maybe a
+structuredField k p = field k (P.cfws *> p <* endOfInput)
 
 -- | Get the value of the @Date:@ field.
 date :: Headers -> Maybe ZonedTime
-date = parseField "Date" P.dateTime
+date = structuredField "Date" P.dateTime
 
 -- | Get the value of the @From:@ field.
 from :: Headers -> Maybe [Mailbox]
-from = parseField "From" P.mailboxList
+from = structuredField "From" P.mailboxList
 
 -- | Get the value of the @Sender:@ field.
 sender :: Headers -> Maybe Mailbox
-sender = parseField "Sender" P.mailbox
+sender = structuredField "Sender" P.mailbox
 
 -- | Get the value of the @Reply-To:@ field.
 replyTo :: Headers -> Maybe [Recipient]
-replyTo = parseField "Reply-To" P.recipientList
+replyTo = structuredField "Reply-To" P.recipientList
 
 -- | Get the value of the @To:@ field.
 to :: Headers -> Maybe [Recipient]
-to = parseField "To" P.recipientList
+to = structuredField "To" P.recipientList
 
 -- | Get the value of the @Cc:@ field.
 cc :: Headers -> Maybe [Recipient]
-cc = parseField "Cc" P.recipientList
+cc = structuredField "Cc" P.recipientList
 
 -- | Get the value of the @Bcc:@ field.
 bcc :: Headers -> Maybe (Maybe [Recipient])
-bcc = parseField "Bcc" (optional P.recipientList)
+bcc = structuredField "Bcc" (optional P.recipientList)
 
 -- | Get the value of the @Message-ID:@ field.
 messageID :: Headers -> Maybe MessageID
-messageID = parseField "Message-ID" P.messageID
+messageID = structuredField "Message-ID" P.messageID
 
 -- | Get the value of the @In-Reply-To:@ field.
 inReplyTo :: Headers -> Maybe [MessageID]
-inReplyTo = parseField "In-Reply-To" (many1 P.messageID)
+inReplyTo = structuredField "In-Reply-To" (many1 P.messageID)
 
 -- | Get the value of the @References:@ field.
 references :: Headers -> Maybe [MessageID]
-references = parseField "References" (many1 P.messageID)
+references = structuredField "References" (many1 P.messageID)
 
 -- | Get the value of the @Subject:@ field.
 subject :: Headers -> Maybe L.Text
-subject = parseUnstructuredField "Subject"
+subject = field "Subject" P.unstructured
 
 -- | Get the value of the @Comments:@ field.
 comments :: Headers -> Maybe L.Text
-comments = parseUnstructuredField "Comments"
+comments = field "Comments" P.unstructured
 
 -- | Get the value of the @Keywords:@ field.
 keywords :: Headers -> Maybe [L.Text]
-keywords = parseField "Keywords" P.phraseList
+keywords = structuredField "Keywords" P.phraseList
 
 -- | Get the value of the @Resent-Date:@ field.
 resentDate :: Headers -> Maybe ZonedTime
-resentDate = parseField "Resent-Date" P.dateTime
+resentDate = structuredField "Resent-Date" P.dateTime
 
 -- | Get the value of the @Resent-From:@ field.
 resentFrom :: Headers -> Maybe [Mailbox]
-resentFrom = parseField "Resent-From" P.mailboxList
+resentFrom = structuredField "Resent-From" P.mailboxList
 
 -- | Get the value of the @Resent-Sender:@ field.
 resentSender :: Headers -> Maybe Mailbox
-resentSender = parseField "Resent-Sender" P.mailbox
+resentSender = structuredField "Resent-Sender" P.mailbox
 
 -- | Get the value of the @Resent-To:@ field.
 resentTo :: Headers -> Maybe [Recipient]
-resentTo = parseField "Resent-To" P.recipientList
+resentTo = structuredField "Resent-To" P.recipientList
 
 -- | Get the value of the @Resent-Cc:@ field.
 resentCc :: Headers -> Maybe [Recipient]
-resentCc = parseField "Resent-Cc" P.recipientList
+resentCc = structuredField "Resent-Cc" P.recipientList
 
 -- | Get the value of the @Resent-Bcc:@ field.
 resentBcc :: Headers -> Maybe (Maybe [Recipient])
-resentBcc = parseField "Resent-Bcc" (optional P.recipientList)
+resentBcc = structuredField "Resent-Bcc" (optional P.recipientList)
 
 -- | Get the value of the @Resent-Message-ID:@ field.
 resentMessageID :: Headers -> Maybe MessageID
-resentMessageID = parseField "Resent-Message-ID" P.messageID
+resentMessageID = structuredField "Resent-Message-ID" P.messageID
 
 -- | Get the value of the @MIME-Version:@ field.
 mimeVersion :: Headers -> Maybe (Int, Int)
-mimeVersion = parseField "MIME-Version" P.mimeVersion
+mimeVersion = structuredField "MIME-Version" P.mimeVersion
 
 -- | Get the value of the @Content-Type:@ field.
 contentType :: Headers -> Maybe (MimeType, Parameters)
-contentType = parseField "Content-Type" P.contentType
+contentType = structuredField "Content-Type" P.contentType
 
 -- | Get the value of the @Content-Transfer-Encoding:@ field.
 contentTransferEncoding :: Headers -> Maybe (CI B.ByteString)
 contentTransferEncoding =
-    parseField "Content-Transfer-Encoding" P.contentTransferEncoding
+    structuredField "Content-Transfer-Encoding" P.contentTransferEncoding
 
 -- | Get the value of the @Content-ID:@ field.
 contentID :: Headers -> Maybe MessageID
-contentID = parseField "Content-ID" P.messageID
+contentID = structuredField "Content-ID" P.messageID
