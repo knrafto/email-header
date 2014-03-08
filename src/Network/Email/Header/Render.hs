@@ -43,6 +43,7 @@ module Network.Email.Header.Render
 
 import qualified Data.ByteString                      as B
 import qualified Data.ByteString.Lazy.Builder         as B
+import           Data.CaseInsensitive                 (CI)
 import qualified Data.CaseInsensitive                 as CI
 import qualified Data.Text.Lazy                       as L
 import           Data.Time.LocalTime
@@ -157,7 +158,7 @@ contentType :: MimeType -> Parameters -> (HeaderName, Doc)
 contentType t params = ("Content-Type", R.contentType t params)
 
 -- | Create a @Content-Transfer-Encoding:@ field.
-contentTransferEncoding :: B.ByteString -> (HeaderName, Doc)
+contentTransferEncoding :: CI B.ByteString -> (HeaderName, Doc)
 contentTransferEncoding =
     buildField "Content-Transfer-Encoding" R.contentTransferEncoding
 

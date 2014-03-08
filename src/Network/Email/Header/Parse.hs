@@ -38,6 +38,7 @@ import           Control.Applicative
 import           Data.Attoparsec.Combinator
 import           Data.Attoparsec.Lazy
 import qualified Data.ByteString                     as B
+import           Data.CaseInsensitive                (CI)
 import qualified Data.Text.Lazy                      as L
 import           Data.Time.LocalTime
 
@@ -145,7 +146,7 @@ contentType :: Headers -> Maybe (MimeType, Parameters)
 contentType = parseField "Content-Type" P.contentType
 
 -- | Get the value of the @Content-Transfer-Encoding:@ field.
-contentTransferEncoding :: Headers -> Maybe B.ByteString
+contentTransferEncoding :: Headers -> Maybe (CI B.ByteString)
 contentTransferEncoding =
     parseField "Content-Transfer-Encoding" P.contentTransferEncoding
 

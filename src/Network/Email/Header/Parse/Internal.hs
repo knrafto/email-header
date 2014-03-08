@@ -38,6 +38,8 @@ import           Data.ByteString.Internal     (w2c)
 import           Data.ByteString.Lazy.Builder
 import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy         as L (toStrict)
+import           Data.CaseInsensitive         (CI)
+import qualified Data.CaseInsensitive         as CI
 import           Data.List
 import qualified Data.Map.Strict              as Map
 import           Data.Maybe
@@ -154,6 +156,10 @@ dotAtom = tokenWith "()<>[]:;@\\\","
 -- characters @"!#$%\'*+-^_`{|}~."@.
 token :: Parser B.ByteString
 token = tokenWith "()<>@,;:\\\"/[]?="
+
+-- | A case-insensitive MIME token.
+tokenCI :: Parser (CI B.ByteString)
+tokenCI = CI.mk <$> token
 
 -- | Parse a quoted-string.
 quotedString :: Parser B.ByteString
@@ -364,10 +370,10 @@ mimeVersion = (,) <$> number 1 <* symbol '.' <*> number 1
 contentType :: Parser (MimeType, Parameters)
 contentType = (,) <$> mimeType <*> parameters
   where
-    mimeType   = MimeType <$> token <* symbol '/' <*> token
+    mimeType   = MimeType <$> tokenCI <* symbol '/' <*> tokenCI
     parameters = Map.fromList <$> many (symbol ';' *> parameter)
-    parameter  = (,) <$> token <* symbol '=' <*> (token <|> quotedString)
+    parameter  = (,) <$> tokenCI <* symbol '=' <*> (token <|> quotedString)
 
 -- | Parse the content transfer encoding.
-contentTransferEncoding :: Parser B.ByteString
-contentTransferEncoding = token
+contentTransferEncoding :: Parser (CI B.ByteString)
+contentTransferEncoding = tokenCI

@@ -27,6 +27,8 @@ import qualified Data.ByteString                    as B
 import qualified Data.ByteString.Base64             as Base64
 import           Data.ByteString.Lazy.Builder       (Builder)
 import qualified Data.ByteString.Lazy.Builder       as B
+import           Data.CaseInsensitive               (CI)
+import qualified Data.CaseInsensitive               as CI
 import           Data.Char
 import qualified Data.Map                           as Map
 import           Data.Monoid
@@ -48,6 +50,10 @@ commaSep f = sep . punctuate "," . map f
 -- | Surround a 'Doc' with angle brackets.
 angle :: Doc -> Doc
 angle d = "<" <> d <> ">"
+
+-- | Render a case-insensitive 'B.ByteString'.
+byteStringCI :: CI B.ByteString -> Doc
+byteStringCI = byteString . CI.original
 
 -- | Format a date and time.
 dateTime :: ZonedTime -> Doc
@@ -212,9 +218,9 @@ contentType :: MimeType -> Parameters -> Doc
 contentType (MimeType t s) params = sep . punctuate ";" $
     renderMimeType : map renderParam (Map.toList params)
   where
-    renderMimeType     = byteString t <> "/" <> byteString s
-    renderParam (k, v) = byteString k <> "=" <> byteString v
+    renderMimeType     = byteStringCI t <> "/" <> byteStringCI s
+    renderParam (k, v) = byteStringCI k <> "=" <> byteString v
 
 -- | Format the content transfer encoding.
-contentTransferEncoding :: B.ByteString -> Doc
-contentTransferEncoding = byteString
+contentTransferEncoding :: CI B.ByteString -> Doc
+contentTransferEncoding = byteStringCI

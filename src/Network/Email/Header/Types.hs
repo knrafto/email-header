@@ -50,9 +50,9 @@ newtype MessageID = MessageID B.ByteString
 
 -- | A MIME type.
 data MimeType = MimeType
-    { mimeType    :: B.ByteString
-    , mimeSubtype :: B.ByteString
+    { mimeType    :: CI B.ByteString
+    , mimeSubtype :: CI B.ByteString
     } deriving (Eq, Ord, Show)
 
 -- | Content type parameters.
-type Parameters = Map B.ByteString B.ByteString
+type Parameters = Map (CI B.ByteString) B.ByteString
