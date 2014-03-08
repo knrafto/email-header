@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Rendering common header fields.
+-- This module is intended to be imported qualified.
 module Network.Email.Header.Render
     ( -- * Rendering options
       RenderOptions(..)
