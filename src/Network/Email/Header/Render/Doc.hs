@@ -48,7 +48,7 @@ infixr 6 </>
 data RenderOptions = RenderOptions
     { lineWidth :: Int
     , indent    :: Int
-    , converter :: Converter
+    , charset   :: Charset
     , encoding  :: Encoding
     } deriving (Eq, Show)
 
@@ -62,7 +62,7 @@ defaultRenderOptions :: RenderOptions
 defaultRenderOptions = RenderOptions
     { lineWidth = 79
     , indent    = 2
-    , converter = defaultConverter
+    , charset   = defaultCharset
     , encoding  = QEncoding
     }
 

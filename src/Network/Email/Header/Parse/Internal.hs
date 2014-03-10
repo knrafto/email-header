@@ -48,7 +48,6 @@ import           Data.Time
 import           Data.Time.Calendar.WeekDate
 import qualified Data.Text                    as T
 import           Data.Text.Encoding
-import           Data.Text.ICU.Convert
 import qualified Data.Text.Lazy               as L (Text, fromChunks)
 import           Data.Word
 
@@ -173,16 +172,16 @@ quotedString = lexeme $
 -- | Parse an encoded word, as per RFC 2047.
 encodedWord :: Parser T.Text
 encodedWord = do
-    _       <- A.string "=?"
-    charset <- B8.unpack <$> tokenWith "()<>@,;:\"/[]?.="
-    _       <- A8.char '?'
-    method  <- decodeMethod
-    _       <- A8.char '?'
-    enc     <- method
-    _       <- A.string "?="
+    _      <- A.string "=?"
+    name   <- B8.unpack <$> tokenWith "()<>@,;:\"/[]?.="
+    _      <- A8.char '?'
+    method <- decodeMethod
+    _      <- A8.char '?'
+    enc    <- method
+    _      <- A.string "?="
 
-    converter <- parseMaybe "charset not found" $ lookupConverter charset
-    return $ toUnicode converter enc
+    charset <- parseMaybe "charset not found" $ lookupCharset name
+    return $ toUnicode charset enc
   where
     decodeMethod = quoted       <$ A.satisfy (`B.elem` "Qq")
                <|> base64String <$ A.satisfy (`B.elem` "Bb")

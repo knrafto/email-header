@@ -97,11 +97,11 @@ instance Arbitrary R.RenderOptions where
     arbitrary = R.RenderOptions
         <$> choose (20, 80)
         <*> choose (1, 8)
-        <*> pure defaultConverter
+        <*> arbitrary
         <*> arbitrary
 
-instance Arbitrary Converter where
-    arbitrary = pure defaultConverter  -- TODO
+instance Arbitrary Charset where
+    arbitrary = pure defaultCharset  -- TODO
 
 instance Arbitrary R.Encoding where
     arbitrary = arbitraryBoundedEnum

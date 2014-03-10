@@ -34,11 +34,11 @@ import qualified Data.Map                           as Map
 import           Data.Monoid
 import           Data.String
 import           Data.Time
-import           Data.Text.ICU.Convert
 import qualified Data.Text.Lazy                     as L
 import           Data.Word
 import           System.Locale
 
+import           Network.Email.Charset
 import           Network.Email.Header.Render.Doc
 import           Network.Email.Header.Render.Layout as F
 import           Network.Email.Header.Types
@@ -105,7 +105,7 @@ hex w = toHexDigit a <> toHexDigit b
 
 -- | Encode a word.
 encodeWord :: RenderOptions -> L.Text -> (Int, Builder)
-encodeWord r = encodeWith (encoding r) . fromUnicode (converter r) . L.toStrict
+encodeWord r = encodeWith (encoding r) . fromUnicode (charset r) . L.toStrict
   where
     encodeWith QEncoding = encodeQ
     encodeWith Base64    = encodeBase64
@@ -149,22 +149,22 @@ layoutText r h t0
     | h         = prefix <> uncurry F.span (encodeWord r t0) <> postfix
     | otherwise = splitLines t0
   where
-    charset = map toLower . getName $ converter r
+    name    = map toLower . charsetName $ charset r
 
     method  = case encoding r of
         QEncoding -> 'Q'
         Base64    -> 'B'
 
-    prefix  = F.span (5 + length charset) $
+    prefix  = F.span (5 + length name) $
         B.byteString "=?" <>
-        B.string8 charset <>
+        B.string8 name <>
         B.char8 '?' <>
         B.char8 method <>
         B.char8 '?'
 
     postfix = F.span 2 (B.byteString "?=")
 
-    padding = 7 + length charset
+    padding = 7 + length name
 
     splitLines t = F.position $ \p ->
         let (l, t') = splitWord r (lineWidth r - padding - p) t
