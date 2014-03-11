@@ -32,7 +32,6 @@ import qualified Data.CaseInsensitive         as CI
 import           Data.Char
 import qualified Data.Map                     as Map
 import           Data.Monoid
-import           Data.String
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
 import qualified Data.Text.Lazy               as L
@@ -76,7 +75,7 @@ dateTime (ZonedTime local zone) = localTime local </> timeZone zone
       where
         (hh, mm) = n `divMod` 60
 
-    pad c w n = fromString $ replicate (w - length s) c ++ s
+    pad c w n = string $ replicate (w - length s) c ++ s
       where
         s = show n
 
@@ -244,7 +243,7 @@ unstructured = renderText (\c -> c > '~' || c < '!')
 mimeVersion ::  Int -> Int -> Doc
 mimeVersion major minor = int major <> "." <> int minor
   where
-    int = fromString . show
+    int = string . show
 
 -- | Format the content type and parameters.
 contentType :: MimeType -> Parameters -> Doc

@@ -12,6 +12,7 @@ module Network.Email.Header.Doc
     , prim
     , group
     , builder
+    , string
     , byteString
     , text
       -- * Spacing
@@ -77,7 +78,7 @@ instance Monoid Doc where
     mappend = Cat
 
 instance IsString Doc where
-    fromString s = builder (length s) (B.string8 s)
+    fromString = string
 
 -- | Render a document with the given options and initial positions.
 render :: RenderOptions -> Int -> Doc -> Builder
