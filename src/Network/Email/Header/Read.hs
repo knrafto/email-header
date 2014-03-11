@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Reading common header fields.
--- This module is intended to be imported qualified.
+-- This module is intended to be imported qualified:
+--
+-- > import qualified Network.Email.Header.Read as H
 module Network.Email.Header.Read
     ( -- * Parsing
       field

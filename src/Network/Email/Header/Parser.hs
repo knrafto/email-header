@@ -1,9 +1,15 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
--- | Header parsers.
+-- | Header parsers. Most exported parsers (with the exception of 'fws',
+-- 'cfws', and 'unstructured') are for parsing structured header fields.
+-- They expect no leading space and will eat an trailing white space.
 module Network.Email.Header.Parser
     ( -- * Whitespace
       fws
     , cfws
+     -- * Combinators
+    , lexeme
+    , symbol
+    , commaSep
       -- * Date and time
     , dateTime
       -- * Addresses

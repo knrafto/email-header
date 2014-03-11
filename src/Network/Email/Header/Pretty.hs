@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
--- | Pretty-printing header fields.
+-- | Formatting and pretty-printing header types.
 module Network.Email.Header.Pretty
-    ( -- * Date and time
-      dateTime
+    ( -- * Combinators
+      commaSep
+      -- * Date and time
+    , dateTime
       -- * Addresses
     , address
     , mailbox
@@ -220,9 +222,12 @@ renderText isIllegalChar t
               || L.any isIllegalChar t
 
 -- | Format a phrase. The text is encoded as is, unless:
--- * The text opens or closes with whitespace, or more than one space appears in
+--
+-- * The text contains leading or trailing whitespace, or more than one space
 --   between words
--- * Any word begins with =?
+--
+-- * Any word begins with @=?@
+--
 -- * Any word contains illegal characters
 phrase :: L.Text -> Doc
 phrase = renderText (\c -> c > '~' || c < '!' || c `elem` "()<>[]:;@\\\",")
@@ -232,9 +237,12 @@ phraseList :: [L.Text] -> Doc
 phraseList = commaSep phrase
 
 -- | Format unstructured text. The text is encoded as is, unless:
--- * The text opens or closes with whitespace, or more than one space appears in
+--
+-- * The text contains leading or trailing whitespace, or more than one space
 --   between words
--- * Any word begins with =?
+--
+-- * Any word begins with @=?@
+--
 -- * Any word contains illegal characters
 unstructured :: L.Text -> Doc
 unstructured = renderText (\c -> c > '~' || c < '!')
