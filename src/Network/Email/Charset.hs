@@ -21,7 +21,8 @@ import           Data.Text             (Text)
 import qualified Data.Text.ICU.Convert as ICU
 import           System.IO.Unsafe
 
--- | A charset.
+-- | A charset. Charset names are compared fuzzily e.g. @UTF-8@ is equivalent
+-- to @utf8@.
 newtype Charset = Charset String
     deriving (Show)
 
@@ -35,14 +36,15 @@ instance Ord Charset where
 charsetName :: Charset -> String
 charsetName (Charset s) = s
 
--- | All charset names and aliases.
+-- | All canonical charset names and aliases.
 charsets :: Set Charset
 charsets = Set.fromList . map Charset . filter legalName $
     concatMap ICU.aliases ICU.converterNames
   where
     legalName = all (`notElem` ",.=?")
 
--- | Lookup a charset from a name or alias.
+-- | Lookup a charset from a name or alias, or 'Nothing' if no such charset
+-- exists.
 lookupCharset :: String -> Maybe Charset
 lookupCharset name = case Set.lookupLE c charsets of
     Just c' | c' == c -> Just c'

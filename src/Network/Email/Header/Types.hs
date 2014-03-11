@@ -1,4 +1,4 @@
--- | Email header types, renamed slightly from RFC 8322.
+-- | Email header types.
 module Network.Email.Header.Types
     ( Headers
     , HeaderName
@@ -44,7 +44,7 @@ data Recipient
     | Group L.Text [Mailbox]
     deriving (Eq, Show)
 
--- | A message identifier.
+-- | A message identifier, which has a similar format to an email address.
 newtype MessageID = MessageID B.ByteString
     deriving (Eq, Ord, Show)
 
@@ -54,5 +54,5 @@ data MimeType = MimeType
     , mimeSubtype :: CI B.ByteString
     } deriving (Eq, Ord, Show)
 
--- | Content type parameters.
+-- | MIME content type parameters.
 type Parameters = Map (CI B.ByteString) B.ByteString
