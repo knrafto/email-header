@@ -17,7 +17,7 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 import           Network.Email.Charset
-import qualified Network.Email.Header.Read   as P
+import qualified Network.Email.Header.Read   as H
 import qualified Network.Email.Header.Render as R
 import           Network.Email.Header.Types
 
@@ -126,38 +126,38 @@ roundTrip name gen renderer parser = testProperty name $
 parsers :: TestTree
 parsers = testGroup "round trip"
     [ -- Origination date
-      roundTrip "Date"     arbitrary R.date P.date
+      roundTrip "Date"     arbitrary R.date H.date
       -- Originator
-    , roundTrip "From"     list1     R.from    P.from
-    , roundTrip "Sender"   arbitrary R.sender  P.sender
-    , roundTrip "Reply-To" list1     R.replyTo P.replyTo
+    , roundTrip "From"     list1     R.from    H.from
+    , roundTrip "Sender"   arbitrary R.sender  H.sender
+    , roundTrip "Reply-To" list1     R.replyTo H.replyTo
       -- Destination address
-    , roundTrip "To"       list1          R.to  P.to
-    , roundTrip "Cc"       list1          R.cc  P.cc
-    , roundTrip "Bcc"      (option list1) R.bcc P.bcc
+    , roundTrip "To"       list1          R.to  H.to
+    , roundTrip "Cc"       list1          R.cc  H.cc
+    , roundTrip "Bcc"      (option list1) R.bcc H.bcc
       -- Identification
-    , roundTrip "Message-ID"  arbitrary R.messageID  P.messageID
-    , roundTrip "In-Reply-To" list1     R.inReplyTo  P.inReplyTo
-    , roundTrip "References"  list1     R.references P.references
+    , roundTrip "Message-ID"  arbitrary R.messageID  H.messageID
+    , roundTrip "In-Reply-To" list1     R.inReplyTo  H.inReplyTo
+    , roundTrip "References"  list1     R.references H.references
       -- Informational
-    , roundTrip "Subject"  text             R.subject  P.subject
-    , roundTrip "Comments" text             R.comments P.comments
-    , roundTrip "Keywords" (listOf1 phrase) R.keywords P.keywords
+    , roundTrip "Subject"  text             R.subject  H.subject
+    , roundTrip "Comments" text             R.comments H.comments
+    , roundTrip "Keywords" (listOf1 phrase) R.keywords H.keywords
       -- Resent
-    , roundTrip "Resent-Date"   arbitrary      R.resentDate      P.resentDate
-    , roundTrip "Resent-From"   list1          R.resentFrom      P.resentFrom
-    , roundTrip "Resent-Sender" arbitrary      R.resentSender    P.resentSender
-    , roundTrip "Resent-To"     list1          R.resentTo        P.resentTo
-    , roundTrip "Resent-Cc"     list1          R.resentCc        P.resentCc
-    , roundTrip "Resent-Bcc"    (option list1) R.resentBcc       P.resentBcc
+    , roundTrip "Resent-Date"   arbitrary      R.resentDate      H.resentDate
+    , roundTrip "Resent-From"   list1          R.resentFrom      H.resentFrom
+    , roundTrip "Resent-Sender" arbitrary      R.resentSender    H.resentSender
+    , roundTrip "Resent-To"     list1          R.resentTo        H.resentTo
+    , roundTrip "Resent-Cc"     list1          R.resentCc        H.resentCc
+    , roundTrip "Resent-Bcc"    (option list1) R.resentBcc       H.resentBcc
     , roundTrip "Resent-Message-ID" arbitrary
-        R.resentMessageID P.resentMessageID
+        R.resentMessageID H.resentMessageID
       -- MIME
-    , roundTrip "MIME-Version" mimeVersion (uncurry R.mimeVersion) P.mimeVersion
-    , roundTrip "Content-Type" contentType (uncurry R.contentType) P.contentType
+    , roundTrip "MIME-Version" mimeVersion (uncurry R.mimeVersion) H.mimeVersion
+    , roundTrip "Content-Type" contentType (uncurry R.contentType) H.contentType
     , roundTrip "Content-Transfer-Encoding" encoding
-        R.contentTransferEncoding P.contentTransferEncoding
-    , roundTrip "Content-ID"   arbitrary   R.contentID             P.contentID
+        R.contentTransferEncoding H.contentTransferEncoding
+    , roundTrip "Content-ID"   arbitrary   R.contentID             H.contentID
     ]
 
 main :: IO ()
