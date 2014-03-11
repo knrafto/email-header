@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
--- | A header-rendering type.
+-- | Header formatting and pretty-printing.
 module Network.Email.Header.Doc
     ( -- * Rendering options
       RenderOptions(..)
@@ -46,9 +46,13 @@ infixr 6 </>
 
 -- | Rendering options.
 data RenderOptions = RenderOptions
-    { lineWidth :: Int
+    { -- | The maximum line width.
+      lineWidth :: Int
+      -- | The indent of each line, in spaces.
     , indent    :: Int
+      -- | The charset used to encode text outside US-ASCII range.
     , charset   :: Charset
+      -- | The header encoding used for encoded words.
     , encoding  :: Encoding
     } deriving (Eq, Show)
 
@@ -61,11 +65,11 @@ data Encoding
     | Base64
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
--- | Default rendering options, which uses a line width of 78, and indent of 2,
--- and utf-8 Q-encoding.
+-- | Default rendering options, which uses a line width of 80, and indent of 2,
+-- and utf-8 quated-printable encoding.
 defaultRenderOptions :: RenderOptions
 defaultRenderOptions = RenderOptions
-    { lineWidth = 79
+    { lineWidth = 80
     , indent    = 2
     , charset   = defaultCharset
     , encoding  = QP
@@ -85,7 +89,7 @@ instance Monoid Doc where
 instance IsString Doc where
     fromString = string
 
--- | Render a document with the given options and initial positions.
+-- | Render a document with the given options and initial position.
 render :: RenderOptions -> Int -> Doc -> Builder
 render r i doc = F.layout i (go [doc])
   where
@@ -98,18 +102,13 @@ render r i doc = F.layout i (go [doc])
         Cat x y   -> go (x:y:ds)
         Union x y -> F.nicest w (go (x:ds)) (go (y:ds))
 
--- | Construct a primitive document from a layout function. Its parameter
--- indicates whether the containing group is laid out horizontally instead of
--- vertically.
+-- | Construct a primitive document from a layout function. The function takes
+-- two parameters: the rendering options, and a 'Bool' which indicates
+-- whether the containing group is laid out horizontally instead of vertically.
 prim :: (RenderOptions -> Bool -> Layout Builder) -> Doc
 prim = Prim False
 
--- | Use the first document if the current line will fit on the page.
--- Otherwise, use the second document.
-union :: Doc -> Doc -> Doc
-union = Union
-
--- | Flatten a document to a horizontal layout.
+-- | Flatten a layout, removing all line breaks.
 flatten :: Doc -> Doc
 flatten Empty       = Empty
 flatten (Prim _ f)  = Prim True f
@@ -118,11 +117,15 @@ flatten (Union x _) = x
 
 -- | Specify an alternative layout with all line breaks flattened.
 group :: Doc -> Doc
-group x = flatten x `union` x
+group x = Union (flatten x) x
 
--- | Construct a 'Doc' from a 'B.Builder'.
+-- | Construct a 'Doc' from a 'B.Builder' and a length.
 builder :: Int -> Builder -> Doc
 builder k s = prim $ \_ _ -> F.span k s
+
+-- | Construct a 'Doc' from a 'String'.
+string :: String -> Doc
+string s = builder (length s) (B.string8 s)
 
 -- | Construct a 'Doc' from a 'B.ByteString'.
 byteString :: B.ByteString -> Doc
@@ -136,12 +139,15 @@ text = byteString . LB.toStrict . L.encodeUtf8
 space :: Layout Builder
 space = F.span 1 (B.char8 ' ')
 
--- | A newline layout.
+-- | A newline layout. This will emit a @CRLF@ pair, break to a new line,
+-- and indent.
 newline :: RenderOptions -> Layout Builder
 newline r =
     F.span 2 (B.byteString "\r\n") <>
     F.break 0 <>
-    mconcat (replicate (indent r) space)
+    mconcat (replicate1 (indent r) space)
+  where
+    replicate1 n a = a : replicate (n - 1) a
 
 -- | A line break. If undone, behaves like a space.
 line :: Doc
@@ -151,11 +157,11 @@ line = prim $ \r h -> if h then space else newline r
 linebreak :: Doc
 linebreak = prim $ \r h -> if h then mempty else newline r
 
--- | A line break or a space.
+-- | A space if the remaining layout fits, and a line break otherwise.
 softline :: Doc
 softline = group line
 
--- | A line break or `mempty`.
+-- | `mempty` if the remaining layout fits, and a line break otherwise.
 softbreak :: Doc
 softbreak = group linebreak
 
@@ -163,7 +169,7 @@ softbreak = group linebreak
 (</>) :: Doc -> Doc -> Doc
 a </> b = a <> softline <> b
 
--- | Separate with lines or spaces.
+-- | Separate a list with spaces if it fits. Otherwise, separate with lines.
 sep :: [Doc] -> Doc
 sep = group . mconcat . intersperse line
 

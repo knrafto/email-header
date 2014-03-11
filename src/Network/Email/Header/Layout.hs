@@ -21,7 +21,7 @@ instance Monoid (Layout a) where
     mempty      = Layout id
     mappend a b = Layout $ runLayout a . runLayout b
 
--- | Run a layout with an initial position to produce a rendered 'Builder'.
+-- | Run a layout with an initial position.
 layout :: Monoid a => Int -> Layout a -> a
 layout p l = snd $ runLayout l (const (const True, mempty)) p
 
