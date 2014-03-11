@@ -44,9 +44,9 @@ charsets = Set.fromList . map Charset . filter legalName $
 
 -- | Lookup a charset from a name or alias.
 lookupCharset :: String -> Maybe Charset
-lookupCharset name
-    | c `Set.member` charsets = Just c
-    | otherwise                = Nothing
+lookupCharset name = case Set.lookupLE c charsets of
+    Just c' | c' == c -> Just c'
+    _                 -> Nothing
   where
     c = Charset name
 
