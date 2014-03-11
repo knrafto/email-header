@@ -46,6 +46,7 @@ import qualified Data.ByteString              as B
 import qualified Data.ByteString.Lazy.Builder as B
 import           Data.CaseInsensitive         (CI)
 import qualified Data.CaseInsensitive         as CI
+import           Data.Monoid
 import qualified Data.Text.Lazy               as L
 import           Data.Time.LocalTime
 
@@ -96,7 +97,7 @@ cc = buildField "Cc" P.recipientList
 
 -- | Create a @Bcc:@ field.
 bcc :: Maybe [Recipient] -> (HeaderName, Doc)
-bcc = buildField "Bcc" (optional P.recipientList)
+bcc = buildField "Bcc" (maybe mempty P.recipientList)
 
 -- | Create a @Message-ID:@ field.
 messageID :: MessageID -> (HeaderName, Doc)
@@ -144,7 +145,7 @@ resentCc = buildField "Resent-Cc" P.recipientList
 
 -- | Create a @Resent-Bcc:@ field.
 resentBcc :: Maybe [Recipient] -> (HeaderName, Doc)
-resentBcc = buildField "Resent-Bcc" (optional P.recipientList)
+resentBcc = buildField "Resent-Bcc" (maybe mempty P.recipientList)
 
 -- | Create a @Resent-Message-ID:@ field.
 resentMessageID :: MessageID -> (HeaderName, Doc)

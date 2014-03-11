@@ -25,7 +25,6 @@ module Network.Email.Header.Doc
       -- * Combinators
     , sep
     , punctuate
-    , optional
     ) where
 
 import qualified Data.ByteString              as B
@@ -169,7 +168,3 @@ punctuate p = go
     go []     = []
     go [x]    = [x]
     go (x:xs) = x <> p : go xs
-
--- | Render a 'Maybe' value.
-optional :: (a -> Doc) -> Maybe a -> Doc
-optional = maybe mempty
