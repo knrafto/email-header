@@ -52,8 +52,13 @@ data RenderOptions = RenderOptions
     , encoding  :: Encoding
     } deriving (Eq, Show)
 
--- | Quoted-word encoding.
-data Encoding = QEncoding | Base64
+-- | The encoding used for binary characters in an encoded word.
+data Encoding
+    -- | Quoted-printable encoding. Spaces are represented with underscores,
+    -- and undisplayable characters are represented as hex pairs.
+    = QP
+    -- | Base 64 encoding of all characters.
+    | Base64
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
 -- | Default rendering options, which uses a line width of 78, and indent of 2,
@@ -63,7 +68,7 @@ defaultRenderOptions = RenderOptions
     { lineWidth = 79
     , indent    = 2
     , charset   = defaultCharset
-    , encoding  = QEncoding
+    , encoding  = QP
     }
 
 -- | A formatted email header.

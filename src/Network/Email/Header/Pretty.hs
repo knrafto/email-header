@@ -139,23 +139,23 @@ hex w = toHexDigit a <> toHexDigit b
 encodeWord :: RenderOptions -> L.Text -> (Int, Builder)
 encodeWord r = encodeWith (encoding r) . fromUnicode (charset r) . L.toStrict
   where
-    encodeWith QEncoding = encodeQ
-    encodeWith Base64    = encodeBase64
+    encodeWith QP     = encodeQ
+    encodeWith Base64 = encodeBase64
 
-    encodeQ              = first getSum .
-                           B.foldr (\w a -> encodeWord8 w <> a) mempty
+    encodeQ           = first getSum .
+                        B.foldr (\w a -> encodeWord8 w <> a) mempty
 
     encodeWord8 w
-        | w == 32        = (Sum 1, B.char8 '_')
-        | isIllegal w    = (Sum 3, B.char8 '=' <> hex w)
-        | otherwise      = (Sum 1, B.word8 w)
+        | w == 32     = (Sum 1, B.char8 '_')
+        | isIllegal w = (Sum 3, B.char8 '=' <> hex w)
+        | otherwise   = (Sum 1, B.word8 w)
 
-    isIllegal w          = w < 33
-                        || w > 126
-                        || w `B.elem` "()<>[]:;@\\\",?=_"
+    isIllegal w       = w < 33
+                     || w > 126
+                     || w `B.elem` "()<>[]:;@\\\",?=_"
 
-    encodeBase64 b       = let e = Base64.encode b
-                           in  (B.length e, B.byteString e)
+    encodeBase64 b    = let e = Base64.encode b
+                        in  (B.length e, B.byteString e)
 
 -- | Split nonempty text into a layout that fits the given width and the
 -- remainder.
@@ -184,8 +184,8 @@ layoutText r h t0
     name    = map toLower . charsetName $ charset r
 
     method  = case encoding r of
-        QEncoding -> 'Q'
-        Base64    -> 'B'
+        QP     -> 'Q'
+        Base64 -> 'B'
 
     prefix  = F.span (5 + length name) $
         B.byteString "=?" <>
