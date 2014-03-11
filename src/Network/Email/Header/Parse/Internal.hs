@@ -283,13 +283,13 @@ dateTime = do
 
     timeZone  = minutesToTimeZone <$> timeZoneOffset
             <|> return utc
-      where
-        timeZoneOffset = lexeme . A8.signed $ do
-            hh <- digits 2
-            mm <- digits 2
-            if mm >= 60
-                then fail "invalid time zone"
-                else return $ hh * 60 + mm
+
+    timeZoneOffset = lexeme . A8.signed $ do
+        hh <- digits 2
+        mm <- digits 2
+        if mm >= 60
+            then fail "invalid time zone"
+            else return $ hh * 60 + mm
 
     listIndex = lexeme . choice . map (\(n, s) -> n <$ A.string s) . zip [1..]
     dayName   = listIndex [ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" ]

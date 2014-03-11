@@ -34,7 +34,6 @@ library
     bytestring,
     case-insensitive,
     containers,
-    old-locale,
     text,
     text-icu,
     time

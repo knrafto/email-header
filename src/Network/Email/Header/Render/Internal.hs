@@ -34,9 +34,9 @@ import qualified Data.Map                           as Map
 import           Data.Monoid
 import           Data.String
 import           Data.Time
+import           Data.Time.Calendar.WeekDate
 import qualified Data.Text.Lazy                     as L
 import           Data.Word
-import           System.Locale
 
 import           Network.Email.Charset
 import           Network.Email.Header.Render.Doc
@@ -57,7 +57,40 @@ byteStringCI = byteString . CI.original
 
 -- | Format a date and time.
 dateTime :: ZonedTime -> Doc
-dateTime = fromString . formatTime defaultTimeLocale rfc822DateFormat
+dateTime (ZonedTime local zone) = localTime local </> timeZone zone
+  where
+    localTime (LocalTime day tod) = date day </> timeOfDay tod
+
+    date day = dayNames !! (w - 1) <> "," </>
+        pad_ 2 d </> months !! (m - 1) </> pad0 4 (fromInteger y)
+      where
+        (y, m, d) = toGregorian day
+        (_, _, w) = toWeekDate day
+
+    timeOfDay (TimeOfDay h m s) =
+        pad0 2 h <> ":" <> pad0 2 m <> ":" <> pad0 2 (floor s)
+
+    timeZone = signed timeZoneOffset . timeZoneMinutes
+
+    timeZoneOffset n = pad0 2 hh <> pad0 2 mm
+      where
+        (hh, mm) = n `divMod` 60
+
+    pad c w n = fromString $ replicate (w - length s) c ++ s
+      where
+        s = show n
+
+    pad_ = pad ' '
+    pad0 = pad '0'
+
+    signed f n
+        | n >= 0    = "+" <> f n
+        | otherwise = "-" <> f (negate n)
+
+    dayNames = [ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" ]
+    months   = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun"
+               , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+               ]
 
 -- | Format an address.
 address :: Address -> Doc
