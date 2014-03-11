@@ -40,15 +40,13 @@ library
 
   exposed-modules:
     Network.Email.Charset
-    Network.Email.Header.Parse
+    Network.Email.Header.Doc
+    Network.Email.Header.Layout
+    Network.Email.Header.Parser
+    Network.Email.Header.Pretty
+    Network.Email.Header.Read
     Network.Email.Header.Render
     Network.Email.Header.Types
-
-  other-modules:
-    Network.Email.Header.Parse.Internal
-    Network.Email.Header.Render.Doc
-    Network.Email.Header.Render.Internal
-    Network.Email.Header.Render.Layout
 
 test-suite tests
   type: exitcode-stdio-1.0

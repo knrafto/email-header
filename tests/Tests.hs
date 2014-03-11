@@ -5,11 +5,11 @@ module Main
     ) where
 
 import           Control.Applicative
-import qualified Data.ByteString.Char8        as B
-import           Data.CaseInsensitive         (CI)
-import qualified Data.CaseInsensitive         as CI
-import qualified Data.Map                     as Map
-import qualified Data.Text.Lazy               as L
+import qualified Data.ByteString.Char8       as B
+import           Data.CaseInsensitive        (CI)
+import qualified Data.CaseInsensitive        as CI
+import qualified Data.Map                    as Map
+import qualified Data.Text.Lazy              as L
 import           Data.Time.Calendar
 import           Data.Time.LocalTime
 import           Test.QuickCheck
@@ -17,8 +17,8 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 import           Network.Email.Charset
-import qualified Network.Email.Header.Parse   as P
-import qualified Network.Email.Header.Render  as R
+import qualified Network.Email.Header.Read   as P
+import qualified Network.Email.Header.Render as R
 import           Network.Email.Header.Types
 
 instance Eq ZonedTime where

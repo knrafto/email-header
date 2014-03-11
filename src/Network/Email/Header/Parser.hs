@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 -- | Header parsers.
-module Network.Email.Header.Parse.Internal
+module Network.Email.Header.Parser
     ( -- * Whitespace
       fws
     , cfws

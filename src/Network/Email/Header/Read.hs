@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
--- | Parsing of common header fields.
+-- | Reading common header fields.
 -- This module is intended to be imported qualified.
-module Network.Email.Header.Parse
+module Network.Email.Header.Read
     ( -- * Parsing
       field
     , structuredField
@@ -41,12 +41,12 @@ module Network.Email.Header.Parse
 import           Control.Applicative
 import           Data.Attoparsec.Combinator
 import           Data.Attoparsec.Lazy
-import qualified Data.ByteString                     as B
-import           Data.CaseInsensitive                (CI)
-import qualified Data.Text.Lazy                      as L
+import qualified Data.ByteString             as B
+import           Data.CaseInsensitive        (CI)
+import qualified Data.Text.Lazy              as L
 import           Data.Time.LocalTime
 
-import qualified Network.Email.Header.Parse.Internal as P
+import qualified Network.Email.Header.Parser as P
 import           Network.Email.Header.Types
 
 -- | Lookup and parse a header with a parser.
