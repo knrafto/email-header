@@ -1,30 +1,36 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 -- | Email header types.
 module Network.Email.Header.Types
-    ( Headers
-    , HeaderName
-    , HeaderField
+    ( -- * Header types
+      HeaderName
+    , Header
+    , Headers
+      -- * Email types
     , Address(..)
     , Mailbox(..)
     , Recipient(..)
     , MessageID(..)
     , MimeType(..)
     , Parameters
+      -- * Exceptions
+    , HeaderException(..)
     ) where
 
+import           Control.Exception
 import qualified Data.ByteString      as B
 import qualified Data.ByteString.Lazy as L
 import           Data.CaseInsensitive (CI)
 import           Data.Map.Strict      (Map)
 import qualified Data.Text.Lazy       as L
 
--- | A set of email headers.
-type Headers = [(HeaderName, HeaderField)]
-
 -- | An email header name.
 type HeaderName = CI B.ByteString
 
--- | The email header field.
-type HeaderField = L.ByteString
+-- | An email header.
+type Header = (HeaderName, L.ByteString)
+
+-- | A set of email headers, in order.
+type Headers = [Header]
 
 -- | An email address.
 newtype Address = Address B.ByteString

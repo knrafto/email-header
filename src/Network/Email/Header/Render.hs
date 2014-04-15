@@ -61,10 +61,7 @@ renderHeaders :: RenderOptions -> [(HeaderName, Doc)] -> Headers
 renderHeaders r = map (renderHeader r)
 
 -- | Render a header.
-renderHeader
-    :: RenderOptions
-    -> (HeaderName, Doc)
-    -> (HeaderName, HeaderField)
+renderHeader :: RenderOptions -> (HeaderName, Doc) -> Header
 renderHeader r (k, b) = (k, B.toLazyByteString l)
   where
     l = render r (B.length (CI.original k) + 2) b
