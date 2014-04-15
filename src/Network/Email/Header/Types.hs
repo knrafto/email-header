@@ -22,6 +22,7 @@ import qualified Data.ByteString.Lazy as L
 import           Data.CaseInsensitive (CI)
 import           Data.Map.Strict      (Map)
 import qualified Data.Text.Lazy       as L
+import           Data.Typeable
 
 -- | An email header name.
 type HeaderName = CI B.ByteString
@@ -62,3 +63,13 @@ data MimeType = MimeType
 
 -- | MIME content type parameters.
 type Parameters = Map (CI B.ByteString) B.ByteString
+
+-- | Email header exceptions.
+data HeaderException
+      -- | A required header is missing.
+    = MissingHeader HeaderName
+      -- | A header field could not be parsed.
+    | HeaderParseError Header String
+    deriving (Show, Typeable)
+
+instance Exception HeaderException
