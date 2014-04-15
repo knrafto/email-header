@@ -5,6 +5,7 @@ module Main
     ) where
 
 import           Control.Applicative
+import           Control.Exception
 import qualified Data.ByteString.Char8       as B
 import           Data.CaseInsensitive        (CI)
 import qualified Data.CaseInsensitive        as CI
@@ -13,6 +14,7 @@ import qualified Data.Text.Lazy              as L
 import           Data.Time.Calendar
 import           Data.Time.LocalTime
 import           Test.QuickCheck
+import           Test.QuickCheck.Property
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
@@ -114,17 +116,17 @@ roundTrip
     => String
     -> Gen a
     -> (a -> (HeaderName, R.Doc))
-    -> (Headers -> Maybe a)
+    -> (Headers -> Either SomeException a)
     -> TestTree
 roundTrip name gen renderer parser = testProperty name $
     forAll gen $ \a opts ->
     let hs = R.renderHeaders opts [renderer a]
     in  case parser hs of
-            Nothing -> False
-            Just b  -> b == a
+            Left e  -> exception "exception" e
+            Right b -> liftBool (b == a)
 
-parsers :: TestTree
-parsers = testGroup "round trip"
+tests :: TestTree
+tests = testGroup "round trip"
     [ -- Origination date
       roundTrip "Date"     arbitrary R.date H.date
       -- Originator
@@ -161,4 +163,4 @@ parsers = testGroup "round trip"
     ]
 
 main :: IO ()
-main = defaultMain parsers
+main = defaultMain tests
