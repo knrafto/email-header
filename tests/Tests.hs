@@ -4,7 +4,6 @@ module Main
     ( main
     ) where
 
-import           Control.Applicative
 import           Control.Exception
 import qualified Data.ByteString.Char8       as B
 import           Data.CaseInsensitive        (CI)

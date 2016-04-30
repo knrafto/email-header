@@ -34,9 +34,12 @@ import qualified Data.CaseInsensitive         as CI
 import           Data.Char
 import qualified Data.Map                     as Map
 import           Data.Monoid
-import           Data.Time
-import           Data.Time.Calendar.WeekDate
 import qualified Data.Text.Lazy               as L
+import           Data.Time                    (LocalTime (LocalTime),
+                                               TimeOfDay (TimeOfDay),
+                                               ZonedTime (ZonedTime),
+                                               timeZoneMinutes, toGregorian)
+import           Data.Time.Calendar.WeekDate
 import           Data.Word
 
 import           Network.Email.Charset
@@ -230,7 +233,8 @@ renderText isIllegalChar t
 --
 -- * Any word contains illegal characters
 phrase :: L.Text -> Doc
-phrase = renderText (\c -> c > '~' || c < '!' || c `elem` "()<>[]:;@\\\",")
+phrase = renderText (\c -> c > '~' || c < '!' || c `elem` punctuation)
+  where punctuation = "()<>[]:;@\\\"," :: String
 
 -- | Format a list of phrases.
 phraseList :: [L.Text] -> Doc
