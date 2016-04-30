@@ -1,4 +1,5 @@
-{-# LANGUAGE BangPatterns, OverloadedStrings #-}
+{-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- | Header parsers. Most exported parsers (with the exception of 'fws',
 -- 'cfws', and 'unstructured') are for parsing structured header fields.
 -- They expect no leading space and will eat an trailing white space.
@@ -6,7 +7,7 @@ module Network.Email.Header.Parser
     ( -- * Whitespace
       fws
     , cfws
-     -- * Combinators
+      -- * Combinators
     , lexeme
     , symbol
     , commaSep
@@ -33,32 +34,32 @@ module Network.Email.Header.Parser
 
 import           Control.Applicative
 import           Control.Monad
-import           Data.Attoparsec              (Parser)
-import qualified Data.Attoparsec              as A
-import qualified Data.Attoparsec.Char8        as A8
+import           Data.Attoparsec.ByteString       (Parser)
+import qualified Data.Attoparsec.ByteString       as A
+import qualified Data.Attoparsec.ByteString.Char8 as A8
 import           Data.Attoparsec.Combinator
 import           Data.Bits
-import qualified Data.ByteString              as B
-import qualified Data.ByteString.Base64       as Base64
-import           Data.ByteString.Internal     (w2c)
+import qualified Data.ByteString                  as B
+import qualified Data.ByteString.Base64           as Base64
+import qualified Data.ByteString.Char8            as B8
+import           Data.ByteString.Internal         (w2c)
+import qualified Data.ByteString.Lazy             as L (toStrict)
 import           Data.ByteString.Lazy.Builder
-import qualified Data.ByteString.Char8        as B8
-import qualified Data.ByteString.Lazy         as L (toStrict)
-import           Data.CaseInsensitive         (CI)
-import qualified Data.CaseInsensitive         as CI
+import           Data.CaseInsensitive             (CI)
+import qualified Data.CaseInsensitive             as CI
 import           Data.List
-import qualified Data.Map.Strict              as Map
+import qualified Data.Map.Strict                  as Map
 import           Data.Maybe
 import           Data.Monoid
+import qualified Data.Text                        as T
+import           Data.Text.Encoding
+import qualified Data.Text.Lazy                   as L (Text, fromChunks)
 import           Data.Time
 import           Data.Time.Calendar.WeekDate
-import qualified Data.Text                    as T
-import           Data.Text.Encoding
-import qualified Data.Text.Lazy               as L (Text, fromChunks)
 import           Data.Word
 
 import           Network.Email.Charset
-import           Network.Email.Header.Types   hiding (mimeType)
+import           Network.Email.Header.Types       hiding (mimeType)
 
 infixl 3 <+>
 
@@ -171,7 +172,7 @@ quotedString :: Parser B.ByteString
 quotedString = lexeme $
     toByteString <$ A8.char '"' <*> concatMany quotedChar <* A8.char '"'
   where
-    quotedChar = mempty <$ A.string "\r\n" 
+    quotedChar = mempty <$ A.string "\r\n"
              <|> word8 <$ A8.char '\\' <*> A.anyWord8
              <|> char8 <$> A8.satisfy (/= '"')
 
