@@ -51,7 +51,7 @@ import           Data.CaseInsensitive         (CI)
 import qualified Data.CaseInsensitive         as CI
 #if MIN_VERSION_base(4,8,0)
 #else
-import Data.Monoid
+import           Data.Monoid
 #endif
 import qualified Data.Text.Lazy               as L
 import           Data.Time.LocalTime
