@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- | Rendering common header fields.
 -- This module is intended to be imported qualified:
@@ -48,6 +49,10 @@ import qualified Data.ByteString              as B
 import qualified Data.ByteString.Lazy.Builder as B
 import           Data.CaseInsensitive         (CI)
 import qualified Data.CaseInsensitive         as CI
+#if MIN_VERSION_base(4,8,0)
+#else
+import           Data.Monoid
+#endif
 import qualified Data.Text.Lazy               as L
 import           Data.Time.LocalTime
 
