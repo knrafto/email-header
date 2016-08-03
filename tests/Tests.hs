@@ -4,6 +4,10 @@ module Main
     ( main
     ) where
 
+#if MIN_VERSION_base(4,8,0)
+#else
+import           Control.Applicative
+#endif
 import           Control.Exception
 import qualified Data.ByteString.Char8       as B
 import           Data.CaseInsensitive        (CI)
