@@ -33,7 +33,6 @@ import           Data.ByteString.Lazy.Builder (Builder)
 import qualified Data.ByteString.Lazy.Builder as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.List                    (intersperse)
-import           Data.Monoid
 import           Data.String
 import qualified Data.Text.Lazy               as L
 import qualified Data.Text.Lazy.Encoding      as L

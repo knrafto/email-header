@@ -10,8 +10,6 @@ module Network.Email.Header.Layout
 
 import Prelude     hiding (span, break)
 
-import Data.Monoid
-
 type LayoutStep a = Int -> (Int -> Bool, a)
 
 -- | An abstract type representing a lazy layout.

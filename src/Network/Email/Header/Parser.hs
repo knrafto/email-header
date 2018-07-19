@@ -50,7 +50,6 @@ import qualified Data.CaseInsensitive             as CI
 import           Data.List
 import qualified Data.Map.Strict                  as Map
 import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Text                        as T
 import           Data.Text.Encoding
 import qualified Data.Text.Lazy                   as L (Text, fromChunks)
