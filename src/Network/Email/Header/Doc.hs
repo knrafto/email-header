@@ -82,9 +82,12 @@ data Doc
     | Cat Doc Doc
     | Union Doc Doc
 
+instance Semigroup Doc where
+  (<>) = Cat
+
 instance Monoid Doc where
     mempty  = Empty
-    mappend = Cat
+    mappend = (<>)
 
 instance IsString Doc where
     fromString = string
