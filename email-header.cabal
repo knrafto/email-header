@@ -1,15 +1,15 @@
 name:                email-header
-version:             0.4.0
+version:             0.4.1
 synopsis:            Parsing and rendering of email and MIME headers
 description:         Parsing and rendering of email and MIME headers
 license:             BSD3
 license-file:        LICENSE
-author:              Kyle Raftogianis <kylerafto@gmail.com>
-maintainer:          Kyle Raftogianis <kylerafto@gmail.com>
+author:              Kyle Raftogianis
+maintainer:          Kyle Raftogianis <knrafto@gmail.com>
 stability:           experimental
 homepage:            http://github.com/knrafto/email-header
 bug-reports:         http://github.com/knrafto/email-header/issues
-copyright:           Copyright (c) 2014 Kyle Raftogianis
+copyright:           Copyright (c) 2014-2018 Kyle Raftogianis
 category:            Network
 build-type:          Simple
 cabal-version:       >= 1.8
