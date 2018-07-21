@@ -10,16 +10,17 @@ module Network.Email.Header.Layout
 
 import Prelude     hiding (span, break)
 
-import Data.Monoid
-
 type LayoutStep a = Int -> (Int -> Bool, a)
 
 -- | An abstract type representing a lazy layout.
 newtype Layout a = Layout { runLayout :: LayoutStep a -> LayoutStep a }
 
+instance Semigroup (Layout a) where
+    (<>) a b = Layout $ runLayout a . runLayout b
+
 instance Monoid (Layout a) where
     mempty      = Layout id
-    mappend a b = Layout $ runLayout a . runLayout b
+    mappend     = (<>)
 
 -- | Run a layout with an initial position.
 layout :: Monoid a => Int -> Layout a -> a

@@ -33,7 +33,6 @@ import           Data.ByteString.Lazy.Builder (Builder)
 import qualified Data.ByteString.Lazy.Builder as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.List                    (intersperse)
-import           Data.Monoid
 import           Data.String
 import qualified Data.Text.Lazy               as L
 import qualified Data.Text.Lazy.Encoding      as L
@@ -82,9 +81,12 @@ data Doc
     | Cat Doc Doc
     | Union Doc Doc
 
+instance Semigroup Doc where
+  (<>) = Cat
+
 instance Monoid Doc where
     mempty  = Empty
-    mappend = Cat
+    mappend = (<>)
 
 instance IsString Doc where
     fromString = string

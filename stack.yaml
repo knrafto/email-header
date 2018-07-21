@@ -1,4 +1,4 @@
-resolver: lts-5.14
+resolver: lts-12.1
 
 ghc-options:
   email-header: -Werror
