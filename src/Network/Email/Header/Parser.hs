@@ -53,7 +53,7 @@ import           Data.Maybe
 import qualified Data.Text                        as T
 import           Data.Text.Encoding
 import qualified Data.Text.Lazy                   as L (Text, fromChunks)
-import           Data.Time
+import           Data.Time hiding (dayOfWeek)
 import           Data.Time.Calendar.WeekDate
 import           Data.Word
 
@@ -71,11 +71,11 @@ concatMany :: (Alternative f, Monoid a) => f a -> f a
 concatMany p = mconcat <$> many p
 
 -- | Return a 'Just' value, and 'fail' a 'Nothing' value.
-parseMaybe :: Monad m => String -> Maybe a -> m a
+parseMaybe :: MonadFail m => String -> Maybe a -> m a
 parseMaybe s = maybe (fail s) return
 
 -- | Return a 'Right' value, and 'fail' a 'Left' value.
-parseEither :: Monad m => Either String a -> m a
+parseEither :: MonadFail m => Either String a -> m a
 parseEither = either fail return
 
 -- | Run a 'Builder' as a strict 'B.ByteString'.
