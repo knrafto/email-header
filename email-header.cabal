@@ -1,6 +1,6 @@
 cabal-version:       3.0
 name:                email-header
-version:             0.4.1
+version:             0.4.2
 synopsis:            Parsing and rendering of email and MIME headers
 description:         Parsing and rendering of email and MIME headers
 license:             BSD-3-Clause
