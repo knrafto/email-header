@@ -1,9 +1,4 @@
-resolver: lts-16.31
+resolver: lts-18.21
 
 ghc-options:
   email-header: -Werror
-
-extra-deps:
-  - containers-0.5.11.0@sha256:1af9da3baaddc4f4aaea016b07d4c38ddbf702ce3f0df31120531950837996b8,17308
-  - text-1.2.4.0
-  - binary-0.8.7.0

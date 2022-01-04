@@ -27,8 +27,8 @@ module Network.Email.Header.Pretty
 import           Control.Arrow
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Base64       as Base64
-import           Data.ByteString.Lazy.Builder (Builder)
-import qualified Data.ByteString.Lazy.Builder as B
+import           Data.ByteString.Builder      (Builder)
+import qualified Data.ByteString.Builder      as B
 import           Data.CaseInsensitive         (CI)
 import qualified Data.CaseInsensitive         as CI
 import           Data.Char

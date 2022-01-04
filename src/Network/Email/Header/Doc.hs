@@ -29,8 +29,8 @@ module Network.Email.Header.Doc
     ) where
 
 import qualified Data.ByteString              as B
-import           Data.ByteString.Lazy.Builder (Builder)
-import qualified Data.ByteString.Lazy.Builder as B
+import           Data.ByteString.Builder      (Builder)
+import qualified Data.ByteString.Builder      as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.List                    (intersperse)
 import           Data.String

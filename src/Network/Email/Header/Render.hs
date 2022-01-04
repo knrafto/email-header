@@ -46,7 +46,7 @@ module Network.Email.Header.Render
     ) where
 
 import qualified Data.ByteString              as B
-import qualified Data.ByteString.Lazy.Builder as B
+import qualified Data.ByteString.Builder      as B
 import           Data.CaseInsensitive         (CI)
 import qualified Data.CaseInsensitive         as CI
 #if MIN_VERSION_base(4,8,0)

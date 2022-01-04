@@ -41,10 +41,10 @@ import           Data.Attoparsec.Combinator
 import           Data.Bits
 import qualified Data.ByteString                  as B
 import qualified Data.ByteString.Base64           as Base64
+import           Data.ByteString.Builder
 import qualified Data.ByteString.Char8            as B8
 import           Data.ByteString.Internal         (w2c)
 import qualified Data.ByteString.Lazy             as L (toStrict)
-import           Data.ByteString.Lazy.Builder
 import           Data.CaseInsensitive             (CI)
 import qualified Data.CaseInsensitive             as CI
 import           Data.List
